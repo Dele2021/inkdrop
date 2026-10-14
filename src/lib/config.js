@@ -39,3 +39,4 @@ export const SWAP_FACTORY = process.env.NEXT_PUBLIC_SWAP_FACTORY || "0x31832f2a9
 export const WETH_ADDRESS = process.env.NEXT_PUBLIC_WETH_ADDRESS || "0x4200000000000000000000000000000000000006";
 export const FEE_BPS = 100; // 100 basis points = 1% — must match contract's feeBps
 export const FEE_PERCENT = 1; // human-readable version for UI display
+// v1.1
