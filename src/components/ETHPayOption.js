@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther, formatEther, formatUnits } from "viem";
 import { INKDROP_ABI, VELODROME_ROUTER_ABI } from "@/lib/contracts";
-import { CONTRACT_ADDRESS, SWAP_ROUTER, WETH_ADDRESS, DEFAULT_TOKEN } from "@/lib/config";
+import { CONTRACT_ADDRESS, SWAP_ROUTER, SWAP_FACTORY, WETH_ADDRESS, DEFAULT_TOKEN } from "@/lib/config";
 import { formatTokenAmount } from "@/lib/utils";
 import { ErrorMessage, parseError } from "@/components/ErrorMessage";
 
@@ -31,7 +31,7 @@ export function ETHPayOption({ linkId, link, onSuccess, onBack }) {
           from: WETH_ADDRESS,
           to: DEFAULT_TOKEN.address,
           stable: false,
-          factory: SWAP_ROUTER,
+          factory: SWAP_FACTORY,
         },
       ],
     ],
