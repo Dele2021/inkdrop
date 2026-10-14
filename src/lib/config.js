@@ -40,3 +40,4 @@ export const WETH_ADDRESS = process.env.NEXT_PUBLIC_WETH_ADDRESS || "0x420000000
 export const FEE_BPS = 100; // 100 basis points = 1% — must match contract's feeBps
 export const FEE_PERCENT = 1; // human-readable version for UI display
 // v1.1
+// v1.1
