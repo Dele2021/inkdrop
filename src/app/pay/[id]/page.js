@@ -601,6 +601,14 @@ export default function PayPage() {
   const [customAmount, setCustomAmount] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [payWithETH, setPayWithETH] = useState(false);
+  const [ethPrice, setEthPrice] = useState(2000);
+
+  useEffect(() => {
+    fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd")
+      .then(r => r.json())
+      .then(d => setEthPrice(d.ethereum.usd))
+      .catch(() => {});
+  }, []);
   const [txHash, setTxHash] = useState(null);
 
   const {

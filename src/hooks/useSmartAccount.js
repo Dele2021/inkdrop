@@ -165,6 +165,21 @@ export function useSmartAccount() {
     [embeddedWallet, isReady, getClients]
   );
 
+
+  const payWithEth = async (linkId, ethAmount, minTokenOut = 0n) => {
+    if (!embeddedWallet || !isReady) throw new Error("Wallet not ready");
+    const { walletClient, publicClient } = await getClients();
+    const payHash = await walletClient.writeContract({
+      address: CONTRACT_ADDRESS,
+      abi: INKDROP_ABI,
+      functionName: "payWithETH",
+      args: [linkId, minTokenOut],
+      value: ethAmount,
+    });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash: payHash });
+    return receipt;
+  };
+
   /**
    * Check the buyer's USDC balance
    */
@@ -199,6 +214,7 @@ export function useSmartAccount() {
     authenticated,
     user,
     approveAndPay,
+    payWithEth,
     getBalance,
     getEthBalance,
     gasMode, // "standard" in v1, "gasless" in v2
