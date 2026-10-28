@@ -355,7 +355,15 @@ function EmailPayFlow({ linkId, link, payAmount, onSuccess, onBack }) {
     setIsPaying(true);
     setFlowError(null);
     try {
-      const receipt = await approveAndPay(linkId, payAmount);
+      let receipt;
+      if (payWithETH) {
+        const { parseEther } = await import("viem");
+        const usdcAmount = Number(payAmount) / 1e6;
+        const ethAmount = parseEther(String((usdcAmount / ethPrice * 1.01).toFixed(18)));
+        receipt = await payWithEth(linkId, ethAmount);
+      } else {
+        receipt = await approveAndPay(linkId, payAmount);
+      }
       toast.success("Payment complete!");
       onSuccess(receipt.transactionHash);
     } catch (error) {
