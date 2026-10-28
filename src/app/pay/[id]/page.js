@@ -244,7 +244,7 @@ function WalletPayFlow({ linkId, link, payAmount, onSuccess, onBack }) {
   return (
     <div className="space-y-4">
       {/* Balance warning */}
-      {tokenBalance !== undefined && !hasEnoughBalance && payAmount > 0n && (
+      {!payWithETH && tokenBalance !== undefined && !hasEnoughBalance && payAmount > 0n && (
         <ErrorMessage
           error={`Insufficient USDC. You have $${formatTokenAmount(tokenBalance)}.`}
         />
