@@ -335,6 +335,7 @@ function EmailPayFlow({ linkId, link, payAmount, onSuccess, onBack }) {
     isReady,
     user,
     approveAndPay,
+    payWithEth,
     getBalance,
     smartAccountAddress,
     gasMode,
