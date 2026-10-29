@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 
 export function QRCode({ url, size = 200, className = "" }) {
+  if (!url) return null;
   const [showModal, setShowModal] = useState(false);
   const canvasRef = useRef(null);
 
