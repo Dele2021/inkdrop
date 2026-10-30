@@ -34,7 +34,7 @@ export const DEFAULT_TOKEN = {
   decimals: 6,
 };
 export const EXPLORER_URL = CHAIN.blockExplorers.default.url;
-export const SWAP_ROUTER = process.env.NEXT_PUBLIC_SWAP_ROUTER;
+export const SWAP_ROUTER = process.env.NEXT_PUBLIC_SWAP_ROUTER || "0x3a63171DD9BebF4D07BC782FECC7eb0b890C2A45";
 export const SWAP_FACTORY = process.env.NEXT_PUBLIC_SWAP_FACTORY || "0x31832f2a97Fd20664D76Cc421207669b55CE4BC0";
 export const WETH_ADDRESS = process.env.NEXT_PUBLIC_WETH_ADDRESS || "0x4200000000000000000000000000000000000006";
 export const FEE_BPS = 100; // 100 basis points = 1% — must match contract's feeBps
