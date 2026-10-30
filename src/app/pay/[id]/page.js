@@ -796,7 +796,7 @@ export default function PayPage() {
               {/* USDC / ETH toggle */}
               <div className="flex items-center gap-2 mb-4">
                 <button
-                  onClick={() => setPayWithETH(false)}
+                  onClick={() => setPayWithETH(false)} style={{display:"none"}}
                   className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
                   style={{
                     background: !payWithETH ? "var(--ink-purple)" : "var(--ink-surface)",
@@ -807,7 +807,7 @@ export default function PayPage() {
                   USDC
                 </button>
                 <button
-                  onClick={() => setPayWithETH(true)}
+                  onClick={() => setPayWithETH(true)} style={{display:"none"}}
                   className="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
                   style={{
                     background: payWithETH ? "var(--ink-purple)" : "var(--ink-surface)",
@@ -818,7 +818,7 @@ export default function PayPage() {
                   ETH
                 </button>
               </div>
-              {payWithETH ? (
+              {false ? (
                 <ETHPayOption
                   linkId={linkId}
                   link={link}
