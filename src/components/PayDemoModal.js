@@ -195,7 +195,7 @@ export const PayDemoModal = ({
  <div className="p-3.5 sm:p-4 rounded-xl bg-white/[0.03] border border-white/10 text-xs space-y-2">
  <div className="text-[#9CA3AF] mb-1">Choose Connected Provider:</div>
  <div className="grid grid-cols-3 gap-2">
- {(['rainbow', 'metamask', 'coinbase'] as const).map((w) => (
+ {['rainbow', 'metamask', 'coinbase'].map((w) => (
  <button
  key={w}
  type="button"

@@ -225,7 +225,7 @@ export const FeaturesSection = ({
 
  const features = [
  {
- id: 'links' as const,
+ id: 'links',
  title: 'Payment Links',
  shortDesc: 'Shareable URL, fixed or open amount, custom title. Generated in seconds.',
  tag: '01 / URL Engine',
@@ -233,7 +233,7 @@ export const FeaturesSection = ({
  thumbnail: <AnimatedPaymentLinksPreview />,
  },
  {
- id: 'wallets' as const,
+ id: 'wallets',
  title: 'Embedded Wallets',
  shortDesc: 'Privy-powered. Payers get a wallet from their email. Zero crypto friction.',
  tag: '02 / Frictionless Auth',
@@ -241,7 +241,7 @@ export const FeaturesSection = ({
  thumbnail: <AnimatedEmbeddedWalletsPreview />,
  },
  {
- id: 'settlement' as const,
+ id: 'settlement',
  title: 'Onchain Settlement',
  shortDesc: 'Every payment is a real USDC transfer. Fully verifiable on Ink Explorer.',
  tag: '03 / Kraken L2 Ledger',
