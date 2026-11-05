@@ -22,6 +22,7 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
 
   const handleGenerate = (e) => {
     e.preventDefault();
+    if (!payoutAddress.trim()) { alert('Please enter your payout wallet address.'); return; }
     playMicroSound('confirm');
     const id = `ink-${Math.random().toString(36).substring(2, 8)}`;
     setGeneratedLink({
@@ -119,7 +120,7 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
                   <ArrowRight className="w-3.5 h-3.5" /> Payout Address <span className="text-white/30">(your wallet — required)</span>
                 </label>
                 <div className="relative">
-                  <input type="text" required value={payoutAddress} onChange={(e) => setPayoutAddress(e.target.value)}
+                  <input type="text" value={payoutAddress} onChange={(e) => setPayoutAddress(e.target.value)}
                     placeholder="0x... your Ink Chain wallet address"
                     className="w-full pl-4 pr-28 py-3 bg-black/70 rounded-xl border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-[#7132F5] focus:ring-1 focus:ring-[#7132F5] transition-all min-h-[44px]" />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
