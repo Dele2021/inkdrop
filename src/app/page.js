@@ -7,7 +7,8 @@ import { HeroSection } from '../components/HeroSection';
 import { HowItWorksSection } from '../components/HowItWorksSection';
 import { FeaturesSection } from '../components/FeaturesSection';
 import { CalculatorSection } from '../components/CalculatorSection';
-import { SecuritySection }nimport { SocialProofSection } from '../components/SecuritySection';
+import { SecuritySection } from '../components/SecuritySection';
+import { SocialProofSection } from '../components/SocialProofSection';
 import { FinalCtaSection } from '../components/FinalCtaSection';
 import { Footer } from '../components/Footer';
 import { CreateLinkModal } from '../components/CreateLinkModal';
@@ -42,7 +43,8 @@ export default function Home() {
           <FeaturesSection />
           <CalculatorSection onOpenCreateModal={() => setCreateModalOpen(true)} />
           <SecuritySection />
-          <SocialProofSection onOpenCreateModal={() => setCreateModalOpen(true)} />n          <FinalCtaSection onOpenCreateModal={() => setCreateModalOpen(true)} />
+          <SocialProofSection onOpenCreateModal={() => setCreateModalOpen(true)} />
+          <FinalCtaSection onOpenCreateModal={() => setCreateModalOpen(true)} />
         </main>
         <Footer />
       </div>
