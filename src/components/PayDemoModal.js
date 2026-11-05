@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { X, Check, ShieldCheck, Zap, Mail, Wallet, ArrowRight, ExternalLink, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { UsdcIcon, InkChainIcon } from './Icons';
-import { PaymentLink } from '../types';
+import { PaymentLink } ;
 import { playMicroSound } from '../utils/sound';
 
 
