@@ -50,8 +50,9 @@ export default function Home() {
       </div>
       {createModalOpen && (
         <CreateLinkModal
+          isOpen={createModalOpen}
           onClose={() => setCreateModalOpen(false)}
-          onOpenPayDemo={openPayDemo}
+          onTestLink={openPayDemo}
         />
       )}
       {demoModalOpen && (
