@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { SectionHeader } from './SectionHeader';
 import { UsdcIcon, InkChainIcon } from './Icons';
-import { FeatureModalId } ;
 import { SpotlightCard } from './SpotlightCard';
 import { playMicroSound } from '../utils/sound';
 import { 
