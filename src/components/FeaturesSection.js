@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { SectionHeader } from './SectionHeader';
 import { UsdcIcon, InkChainIcon } from './Icons';
-import { FeatureModalId } from '../types';
+import { FeatureModalId } ;
 import { SpotlightCard } from './SpotlightCard';
 import { playMicroSound } from '../utils/sound';
 import { 
@@ -78,7 +78,7 @@ const AnimatedEmbeddedWalletsPreview = () => {
 
  useEffect(() => {
  const timer = setInterval(() => {
- setStep((prev) => ((prev + 1) % 3) as 0 | 1 | 2);
+ setStep((prev) => ((prev + 1) % 3));
  }, 2400);
  return () => clearInterval(timer);
  }, []);
