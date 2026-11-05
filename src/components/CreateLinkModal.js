@@ -20,8 +20,8 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
   const platformFee = numAmount * 0.01;
   const netRecipient = numAmount - platformFee;
 
-  const handleGenerate = (e) => {
-    e.preventDefault();
+  const handleGenerate = () => {
+    if (!title.trim()) { alert("Please enter a payment title."); return; }
     if (!payoutAddress.trim()) { alert('Please enter your payout wallet address.'); return; }
     playMicroSound('confirm');
     const id = `ink-${Math.random().toString(36).substring(2, 8)}`;
@@ -64,7 +64,7 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
               <p className="text-xs sm:text-sm text-[#9CA3AF] mt-1">Settles immediately in USDC on Ink Chain. Transparent 1% platform fee.</p>
             </div>
 
-            <form onSubmit={handleGenerate} className="space-y-4">
+            <div className="space-y-4">
               {/* Title */}
               <div>
                 <label className="block text-xs font-mono uppercase tracking-wider text-[#9CA3AF] mb-1.5">Payment Title</label>
@@ -163,11 +163,11 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
               </div>
 
               <div className="pt-2">
-                <button type="submit" className="w-full py-4 rounded-xl bg-[#7132F5] hover:bg-[#854BFF] text-white font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_25px_rgba(113,50,245,0.45)] cursor-pointer min-h-[48px]">
+                <button type="button" onClick={handleGenerate} className="w-full py-4 rounded-xl bg-[#7132F5] hover:bg-[#854BFF] text-white font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_25px_rgba(113,50,245,0.45)] cursor-pointer min-h-[48px]">
                   <span>Generate Payment Link</span><ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         ) : (
           <div className="text-center py-2 sm:py-4 space-y-5 sm:space-y-6 animate-in zoom-in-95 duration-200">
