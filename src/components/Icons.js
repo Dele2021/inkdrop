@@ -1,57 +1,103 @@
-"use client";
+'use client';
 
-/* ── Landing page icons ── */
-export function LinkIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9E70FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-    </svg>
-  );
-}
+import React from 'react';
 
-export function BoltIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9E70FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  );
-}
+export const InkDropLogo = ({
+ className = '',
+ size = 28,
+}) => (
+ <div className={`flex items-center gap-2.5 font-sans font-bold tracking-tight select-none ${className}`}>
+ <div className="relative flex items-center justify-center">
+ <svg
+ width={size}
+ height={size}
+ viewBox="0 0 32 32"
+ fill="none"
+ xmlns="http://www.w3.org/2000/svg"
+ className="transition-transform duration-300 hover:scale-105"
+ >
+ <path
+ d="M16 3C16 3 7 14.8 7 21a9 9 0 0018 0c0-6.2-9-18-9-18z"
+ fill="url(#inkdrop-grad)"
+ />
+ <path
+ d="M13.5 17.5c0 3 2.5 5 5 5"
+ stroke="#FFFFFF"
+ strokeWidth="2"
+ strokeLinecap="round"
+ strokeOpacity="0.8"
+ />
+ <defs>
+ <linearGradient id="inkdrop-grad" x1="16" y1="3" x2="16" y2="30" gradientUnits="userSpaceOnUse">
+ <stop stopColor="#9462FF" />
+ <stop offset="1" stopColor="#7132F5" />
+ </linearGradient>
+ </defs>
+ </svg>
+ {/* Glow pulse */}
+ <div className="absolute inset-0 bg-[#7132F5]/40 blur-md rounded-full pointer-events-none -z-10" />
+ </div>
+ <span className="text-xl font-extrabold tracking-tight text-white flex items-center">
+ INK<span className="text-[#8B5CF6]">DROP</span>
+ </span>
+ </div>
+);
 
-export function ShieldIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9E70FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      <polyline points="9 12 11 14 15 10" />
-    </svg>
-  );
-}
+export const UsdcIcon = ({
+ className = '',
+ size = 20,
+}) => (
+ <svg
+ width={size}
+ height={size}
+ viewBox="0 0 24 24"
+ fill="none"
+ xmlns="http://www.w3.org/2000/svg"
+ className={`inline-block shrink-0 align-middle ${className}`}
+ >
+ <circle cx="12" cy="12" r="10.5" fill="#2775CA" />
+ <path
+ d="M13.8 14.5c0-1.1-.7-1.6-2.2-1.9-1.3-.2-1.6-.5-1.6-1.1 0-.6.5-1 1.4-1 .8 0 1.5.3 2 .8l.8-.9c-.6-.6-1.5-.9-2.3-1V8.5h-1v.9c-1.1.1-2 .8-2 1.9 0 1.1.7 1.6 2.2 1.9 1.4.3 1.6.6 1.6 1.1 0 .7-.6 1.2-1.6 1.2-1 0-1.8-.4-2.4-1.1l-.9.9c.7.9 1.8 1.3 2.8 1.4v.9h1v-.9c1.2-.1 2.2-.8 2.2-2.1z"
+ fill="#FFFFFF"
+ />
+ </svg>
+);
 
-/* ── Dashboard icons ── */
-export function PlusIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  );
-}
+export const InkChainIcon = ({
+ className = '',
+ size = 20,
+}) => (
+ <svg
+ width={size}
+ height={size}
+ viewBox="0 0 24 24"
+ fill="none"
+ xmlns="http://www.w3.org/2000/svg"
+ className={`inline-block shrink-0 align-middle ${className}`}
+ >
+ <circle cx="12" cy="12" r="10.5" fill="#7132F5" />
+ <path
+ d="M12 6.5a5.5 5.5 0 00-5.5 5.5c0 3 2.5 5.5 5.5 5.5 2 0 3.7-1 4.7-2.6a1 1 0 10-1.7-1 3.5 3.5 0 01-3 1.6 3.5 3.5 0 01-3.5-3.5 3.5 3.5 0 013.5-3.5c1.2 0 2.2.6 2.8 1.5a1 1 0 001.7-1A5.5 5.5 0 0012 6.5z"
+ fill="#FFFFFF"
+ />
+ <circle cx="12" cy="12" r="1.8" fill="#FFFFFF" />
+ </svg>
+);
 
-export function CopyIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  );
-}
-
-export function WalletIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-      <path d="M18 12a1 1 0 0 0 0 4h4v-4Z" />
-    </svg>
-  );
-}
+export const EthIcon = ({
+ className = '',
+ size = 20,
+}) => (
+ <svg
+ width={size}
+ height={size}
+ viewBox="0 0 24 24"
+ fill="none"
+ xmlns="http://www.w3.org/2000/svg"
+ className={`inline-block shrink-0 align-middle ${className}`}
+ >
+ <circle cx="12" cy="12" r="10.5" fill="#1C1E26" stroke="#374151" strokeWidth="1" />
+ <path d="M12 5l-4.5 7.5L12 15l4.5-2.5L12 5z" fill="#93C5FD" fillOpacity="0.8" />
+ <path d="M12 16l-4.5-2.5L12 19l4.5-5.5L12 16z" fill="#60A5FA" />
+ </svg>
+);
