@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useState, MouseEvent } from 'react';
+import React, { useRef, useState } from 'react';
 import { playMicroSound } from '../utils/sound';
 
 
@@ -21,7 +21,7 @@ export const SpotlightCard = ({
  const [position, setPosition] = useState({ x: 0, y: 0 });
  const [isHovered, setIsHovered] = useState(false);
 
- const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+ const handleMouseMove = (e) => {
  if (!cardRef.current) return;
  const rect = cardRef.current.getBoundingClientRect();
  setPosition({
@@ -30,7 +30,7 @@ export const SpotlightCard = ({
  });
  };
 
- const handleMouseEnter = (e: MouseEvent<HTMLDivElement>) => {
+ const handleMouseEnter = (e) => {
  setIsHovered(true);
  playMicroSound('tick');
  if (onMouseEnter) onMouseEnter(e);
