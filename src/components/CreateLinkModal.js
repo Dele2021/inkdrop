@@ -13,6 +13,7 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
   const [description, setDescription] = useState('Final milestone deliverables for web application redesign.');
   const [generatedLink, setGeneratedLink] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [errors, setErrors] = useState({});
 
   if (!isOpen) return null;
 
@@ -20,9 +21,13 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
   const platformFee = numAmount * 0.01;
   const netRecipient = numAmount - platformFee;
 
+
   const handleGenerate = () => {
-    if (!title.trim()) { alert("Please enter a payment title."); return; }
-    if (!payoutAddress.trim()) { alert('Please enter your payout wallet address.'); return; }
+    const newErrors = {};
+    if (!title.trim()) newErrors.title = 'Please enter a payment title.';
+    if (!payoutAddress.trim()) newErrors.payout = 'Please enter your payout wallet address.';
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
+    setErrors({});
     playMicroSound('confirm');
     const id = `ink-${Math.random().toString(36).substring(2, 8)}`;
     setGeneratedLink({
@@ -48,7 +53,7 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="relative w-full max-w-lg bg-[#080b11] border border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-[0_25px_70px_rgba(0,0,0,0.95)] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-[#9CA3AF] hover:text-white border border-white/10 transition-colors cursor-pointer flex items-center justify-center z-10">
           <X className="w-5 h-5" />
