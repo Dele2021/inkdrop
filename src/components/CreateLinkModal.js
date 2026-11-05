@@ -22,26 +22,36 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
   const netRecipient = numAmount - platformFee;
 
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     const newErrors = {};
     if (!title.trim()) newErrors.title = 'Please enter a payment title.';
     if (!payoutAddress.trim()) newErrors.payout = 'Please enter your payout wallet address.';
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
     setErrors({});
     playMicroSound('confirm');
-    const id = `ink-${Math.random().toString(36).substring(2, 8)}`;
-    setGeneratedLink({
-      id,
-      title: title.trim() || 'Payment Request',
-      amount: numAmount,
-      currency: 'USDC',
-      recipientAddress: payoutAddress || '0x71C8...921A',
-      recipientName: 'alex.ink',
-      description,
-      isFixed,
-      allowSwap,
-      createdAt: new Date().toISOString(),
-    });
+    try {
+      const res = await fetch('/api/links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, amount: numAmount, isFixed, payoutAddress, payinAddress, allowSwap, description }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create link');
+      setGeneratedLink({
+        id: data.id,
+        url: data.url,
+        title: title.trim(),
+        amount: numAmount,
+        currency: 'USDC',
+        payoutAddress,
+        description,
+        isFixed,
+        allowSwap,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      setErrors({ submit: err.message });
+    }
   };
 
   const handleCopy = () => {
@@ -188,7 +198,7 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
             <div className="p-3.5 sm:p-4 rounded-2xl bg-black border border-white/15 text-left font-mono text-xs">
               <div className="text-[#9CA3AF] text-[11px] mb-1.5 flex items-center justify-between"><span>Shareable Link:</span><span className="text-emerald-400">Live now</span></div>
               <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white">
-                <span className="truncate min-w-0 text-xs sm:text-sm text-[#C4B5FD]">https://inkdrop.link/pay/{generatedLink.id}</span>
+                <span className="truncate min-w-0 text-xs sm:text-sm text-[#C4B5FD]">{generatedLink.url || `https://inkdrop-eight.vercel.app/pay/${generatedLink.id}`}</span>
                 <button onClick={handleCopy} className="px-3 py-2 rounded-lg bg-[#7132F5] hover:bg-[#854BFF] text-white font-bold text-xs shrink-0 flex items-center gap-1 cursor-pointer transition-colors shadow-sm min-h-[36px]">
                   {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}<span>{copied ? 'Copied' : 'Copy'}</span>
                 </button>
