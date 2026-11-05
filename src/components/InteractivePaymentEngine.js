@@ -1,593 +1,316 @@
 'use client';
 
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { SectionHeader } from './SectionHeader';
 import { SpotlightCard } from './SpotlightCard';
-import { UsdcIcon, InkChainIcon } from './Icons';
 import { playMicroSound } from '../utils/sound';
-import { 
- Link2, Mail, ShieldCheck, ArrowRight, CheckCircle2, Play, 
- RotateCcw, Zap, Terminal, Sparkles, ChevronRight, Lock, 
- Send, Layers, Wallet
+import {
+  ArrowRight, CheckCircle2, Clock, Copy, Check, ExternalLink,
+  Zap, Link2, Eye, ChevronRight, Play, Pause, RotateCcw,
+  Wallet, ShieldCheck, Globe, TrendingUp,
 } from 'lucide-react';
 
-export const InteractivePaymentEngine = () => {
- const [activeStep, setActiveStep] = useState(1);
- const [isPlaying, setIsPlaying] = useState(true);
- const [customTitle, setCustomTitle] = useState('Brand Sprint & UI Architecture');
- const [customAmount, setCustomAmount] = useState(1200);
- const [payerEmail, setPayerEmail] = useState('payer.client@venture.co');
- 
- // Interactive animation states
- const [typingIndex, setTypingIndex] = useState(0);
- const [finalityCountdown, setFinalityCountdown] = useState(1.8);
- const [isFinalized, setIsFinalized] = useState(false);
- const [blockHash, setBlockHash] = useState('0x9a8f...4e12');
+const STEPS = [
+  { id: 1, label: 'Configure', short: 'Config' },
+  { id: 2, label: 'Share Link', short: 'Share' },
+  { id: 3, label: 'Paid', short: 'Paid' },
+];
 
- const platformFee = customAmount * 0.01; // 1% platform fee
- const merchantNet = customAmount - platformFee; // 99%
+const DEMO_DEFAULTS = {
+  title: 'Design Consultation',
+  amount: '500',
+  currency: 'USDC',
+  description: 'Brand identity & strategy session',
+};
 
- // Auto-play stepper loop
- useEffect(() => {
- if (!isPlaying) return;
- const timer = setInterval(() => {
- setActiveStep((prev) => {
- const next = prev >= 4 ? 1 : prev + 1;
- playMicroSound('toggle');
- return next;
- });
- }, 4500);
+const FAKE_HASH = '0x4a7f...c3e9';
+const CONTRACT = '0x7F8798eA489379659341498B75F348F29aeB5A2';
 
- return () => clearInterval(timer);
- }, [isPlaying]);
+export const InteractivePaymentEngine = ({ onOpenCreateModal }) => {
+  const [activeStep, setActiveStep] = useState(1);
+  const [title, setTitle] = useState(DEMO_DEFAULTS.title);
+  const [amount, setAmount] = useState(DEMO_DEFAULTS.amount);
+  const [description, setDescription] = useState(DEMO_DEFAULTS.description);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedHash, setCopiedHash] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
+  const [nudgeVisible, setNudgeVisible] = useState(false);
+  const autoRef = useRef(null);
 
- // Handle finality counter when on Step 3
- useEffect(() => {
- if (activeStep === 3) {
- setIsFinalized(false);
- setFinalityCountdown(1.8);
- const interval = setInterval(() => {
- setFinalityCountdown((prev) => {
- if (prev <= 0.1) {
- clearInterval(interval);
- setIsFinalized(true);
- playMicroSound('confirm');
- return 0.0;
- }
- return parseFloat((prev - 0.2).toFixed(1));
- });
- }, 180);
- return () => clearInterval(interval);
- }
- }, [activeStep]);
+  const fee = amount ? (parseFloat(amount) * 0.01).toFixed(2) : '0.00';
+  const net = amount ? (parseFloat(amount) * 0.99).toFixed(2) : '0.00';
+  const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 32) || 'payment';
+  const paymentUrl = `https://inkdrop.xyz/pay/${slug}`;
 
- const handleStepClick = (step) => {
- setIsPlaying(false);
- setActiveStep(step);
- playMicroSound('click');
- };
+  // Nudge: show after 2.5s on step 1 if user hasn't touched a field
+  useEffect(() => {
+    if (activeStep === 1) {
+      const t = setTimeout(() => setNudgeVisible(true), 2500);
+      return () => clearTimeout(t);
+    } else {
+      setNudgeVisible(false);
+    }
+  }, [activeStep]);
 
- const stepsMeta = [
- { num: 1, title: 'Generate Link', tag: 'INPUT', icon: Link2, desc: 'Zero-config payment link with transparent 1% fee' },
- { num: 2, title: 'Email Handshake', tag: 'AUTH', icon: Mail, desc: 'Privy provisions an MPC wallet from email in 380ms' },
- { num: 3, title: 'Ink L2 Finality', tag: 'ROLLUP', icon: Zap, desc: 'Kraken sequencer confirms block in ~1.8 seconds' },
- { num: 4, title: '99% Net Payout', tag: 'SETTLED', icon: ShieldCheck, desc: 'USDC lands directly in merchant self-custody' },
- ];
+  // Hide nudge once user focuses a field
+  useEffect(() => {
+    if (focusedField) setNudgeVisible(false);
+  }, [focusedField]);
 
- return (
- <div className="w-full">
- {/* Simulation Controller Header */}
- <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-8 border-b border-white/10">
- <div className="flex items-center gap-3">
- <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#7132F5]/20 border border-[#7132F5]/40 font-mono text-xs text-[#D8B4FE]">
- <span className="w-2 h-2 rounded-full bg-[#8B5CF6] animate-ping" />
- <span>INTERACTIVE PAYMENT LIFECYCLE SIMULATOR</span>
- </div>
- <span className="hidden md:inline font-mono text-xs text-[#9CA3AF]">
- [ Kraken Ink Chain L2 Architecture ]
- </span>
- </div>
+  const goToStep = useCallback((step) => {
+    playMicroSound('tick');
+    setActiveStep(step);
+  }, []);
 
- <div className="flex items-center gap-3">
- <button
- onClick={() => {
- setIsPlaying(!isPlaying);
- playMicroSound('toggle');
- }}
- className={`px-3.5 py-1.5 rounded-lg border font-mono text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer min-h-[36px] ${
- isPlaying
- ? 'border-[#7132F5] bg-[#7132F5]/20 text-white shadow-[0_0_15px_rgba(113,50,245,0.4)]'
- : 'border-white/15 bg-white/[0.03] text-[#9CA3AF] hover:text-white'
- }`}
- >
- {isPlaying ? (
- <>
- <span className="w-2 h-2 rounded-sm bg-[#8B5CF6] animate-pulse" />
- <span>AUTO PLAYING</span>
- </>
- ) : (
- <>
- <Play className="w-3 h-3 text-[#A78BFA]" />
- <span>RESUME DEMO</span>
- </>
- )}
- </button>
+  const handleNext = useCallback(() => {
+    if (activeStep < 3) {
+      playMicroSound('click');
+      setActiveStep((s) => s + 1);
+    }
+  }, [activeStep]);
 
- <button
- onClick={() => {
- setActiveStep(1);
- setIsPlaying(true);
- playMicroSound('click');
- }}
- className="p-2 rounded-lg border border-white/10 bg-white/[0.02] text-[#9CA3AF] hover:text-white hover:border-white/20 transition-all cursor-pointer"
- title="Reset Simulation"
- >
- <RotateCcw className="w-3.5 h-3.5" />
- </button>
- </div>
- </div>
+  const handleBack = useCallback(() => {
+    if (activeStep > 1) {
+      playMicroSound('tick');
+      setActiveStep((s) => s - 1);
+    }
+  }, [activeStep]);
 
- {/* Stepper Navigation Pills (Interactive Clickable Timeline) */}
- <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
- {stepsMeta.map((s) => {
- const Icon = s.icon;
- const isActive = activeStep === s.num;
- return (
- <button
- key={s.num}
- onClick={() => handleStepClick(s.num)}
- className={`text-left p-3.5 sm:p-4 rounded-xl border transition-all duration-300 relative overflow-hidden cursor-pointer ${
- isActive
- ? 'bg-[#7132F5]/15 border-[#7132F5] shadow-[0_0_25px_rgba(113,50,245,0.3)]'
- : 'bg-black/60 border-white/10 hover:border-white/25 hover:bg-white/[0.02]'
- }`}
- >
- {/* Active top accent indicator bar */}
- {isActive && (
- <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#7132F5] via-[#854BFF] to-[#A78BFA]" />
- )}
+  const handleReset = useCallback(() => {
+    playMicroSound('toggle');
+    setActiveStep(1);
+    setTitle(DEMO_DEFAULTS.title);
+    setAmount(DEMO_DEFAULTS.amount);
+    setDescription(DEMO_DEFAULTS.description);
+    setIsPlaying(false);
+    if (autoRef.current) clearInterval(autoRef.current);
+  }, []);
 
- <div className="flex items-center justify-between mb-2">
- <span className="font-mono text-[10px] text-[#A78BFA] font-bold">
- [ STAGE 0{s.num} ]
- </span>
- <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
- isActive ? 'bg-[#7132F5]/40 border-[#7132F5] text-white' : 'bg-white/5 border-white/10 text-[#9CA3AF]'
- }`}>
- {s.tag}
- </span>
- </div>
+  const handleCopyLink = () => {
+    playMicroSound('click');
+    navigator.clipboard?.writeText(paymentUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
- <div className="flex items-center gap-2 mb-1">
- <Icon className={`w-4 h-4 ${isActive ? 'text-[#D8B4FE]' : 'text-[#9CA3AF]'}`} />
- <span className="text-sm font-bold text-white tracking-tight">
- {s.title}
- </span>
- </div>
- <p className="text-[11px] text-[#9CA3AF] line-clamp-1 leading-snug">
- {s.desc}
- </p>
- </button>
- );
- })}
- </div>
+  const handleCopyHash = () => {
+    playMicroSound('click');
+    navigator.clipboard?.writeText(FAKE_HASH);
+    setCopiedHash(true);
+    setTimeout(() => setCopiedHash(false), 2000);
+  };
 
- {/* Main Interactive Stage Display Viewport */}
- <SpotlightCard className="p-5 sm:p-8 border-white/15 bg-black/85 relative overflow-hidden">
- {/* Terminal Telemetry Bar */}
- <div className="flex flex-wrap items-center justify-between gap-2 pb-4 mb-6 border-b border-white/10 font-mono text-xs text-[#9CA3AF]">
- <div className="flex items-center gap-2">
- <Terminal className="w-3.5 h-3.5 text-[#A78BFA]" />
- <span className="text-white font-semibold">INKDROP_PROTOCOL_KERNEL</span>
- <span className="text-white/30">::</span>
- <span className="text-[#D8B4FE]">STAGE_0{activeStep}_ACTIVE</span>
- </div>
- <div className="flex items-center gap-3 text-[11px]">
- <span className="text-white/60">Platform Fee: <strong className="text-white">1.0%</strong></span>
- <span className="text-white/30">|</span>
- <span className="text-emerald-400 flex items-center gap-1">
- <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
- L2 Sequencer Live
- </span>
- </div>
- </div>
+  // Auto-play: cycle steps every 2.8s
+  useEffect(() => {
+    if (isPlaying) {
+      autoRef.current = setInterval(() => {
+        setActiveStep((s) => {
+          const next = s < 3 ? s + 1 : 1;
+          playMicroSound('tick');
+          return next;
+        });
+      }, 2800);
+    } else {
+      if (autoRef.current) clearInterval(autoRef.current);
+    }
+    return () => { if (autoRef.current) clearInterval(autoRef.current); };
+  }, [isPlaying]);
 
- {/* STAGE 1: LINK CREATION & 1% FEE STRUCTURE */}
- {activeStep === 1 && (
- <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-in fade-in duration-300">
- <div className="lg:col-span-7 space-y-4">
- <div className="space-y-1">
- <span className="font-mono text-xs uppercase tracking-wider text-[#A78BFA]">
- Step 1 · Dynamic Payment Synthesis
- </span>
- <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
- Enter payment amount. URL synthesizes instantly.
- </h3>
- <p className="text-sm text-[#9CA3AF] leading-relaxed">
- No merchant account required. Our smart contract encodes the invoice details on Ink Chain with a transparent 1% protocol fee.
- </p>
- </div>
+  const inputBase = 'w-full px-4 py-3 rounded-xl text-white text-sm font-mono placeholder-white/30 outline-none transition-all duration-300 bg-black/60 border';
 
- {/* Interactive test input controls */}
- <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-3">
- <div>
- <label className="block text-[11px] font-mono text-[#9CA3AF] uppercase mb-1">
- Invoice Description
- </label>
- <input
- type="text"
- value={customTitle}
- onChange={(e) => setCustomTitle(e.target.value)}
- className="w-full px-3 py-2 bg-black rounded-lg border border-white/15 text-white text-xs font-medium focus:outline-none focus:border-[#7132F5]"
- />
- </div>
+  const getInputClass = (field) => {
+    if (focusedField === field)
+      return inputBase + ' border-[#7132F5] shadow-[0_0_0_3px_rgba(113,50,245,0.3),0_0_18px_rgba(113,50,245,0.2)]';
+    if (nudgeVisible)
+      return inputBase + ' border-[#7132F5]/60 shadow-[0_0_0_2px_rgba(113,50,245,0.15),0_0_12px_rgba(113,50,245,0.15)] animate-pulse';
+    return inputBase + ' border-white/15 hover:border-white/30';
+  };
 
- <div className="grid grid-cols-2 gap-3">
- <div>
- <label className="block text-[11px] font-mono text-[#9CA3AF] uppercase mb-1">
- Gross Amount (USDC)
- </label>
- <div className="relative">
- <input
- type="number"
- min={10}
- max={100000}
- value={customAmount}
- onChange={(e) => setCustomAmount(Math.max(1, Number(e.target.value)))}
- className="w-full px-3 py-2 bg-black rounded-lg border border-white/15 text-white font-mono text-sm font-bold focus:outline-none focus:border-[#7132F5]"
- />
- <span className="absolute right-2.5 top-2 text-[10px] font-mono text-[#9CA3AF]">USDC</span>
- </div>
- </div>
+  return (
+    <section id="how-it-works" className="relative py-28 px-4 sm:px-6 lg:px-8 border-t border-white/[0.08] bg-black overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] rounded-full blur-[160px] pointer-events-none -z-10"
+        style={{ background: 'radial-gradient(circle, rgba(113,50,245,0.12) 0%, transparent 70%)', animation: 'glowPulse 8s ease-in-out infinite' }} />
+      <div className="max-w-7xl mx-auto relative">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-14">
+          <SectionHeader number="03" total="05" tag="How It Works" />
+          <div className="flex items-center gap-2">
+            <button onClick={() => { setIsPlaying((p) => !p); playMicroSound('toggle'); }}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/15 bg-white/[0.03] hover:bg-white/[0.07] text-white font-mono text-xs font-semibold transition-all cursor-pointer">
+              {isPlaying ? <><Pause className="w-3.5 h-3.5" /><span>Pause</span></> : <><Play className="w-3.5 h-3.5" /><span>Auto-play</span></>}
+            </button>
+            <button onClick={handleReset}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/15 bg-white/[0.03] hover:bg-white/[0.07] text-white font-mono text-xs font-semibold transition-all cursor-pointer">
+              <RotateCcw className="w-3.5 h-3.5" /><span>Reset</span>
+            </button>
+          </div>
+        </div>
 
- <div>
- <label className="block text-[11px] font-mono text-[#9CA3AF] uppercase mb-1">
- 1% InkDrop Fee
- </label>
- <div className="px-3 py-2 bg-[#7132F5]/10 rounded-lg border border-[#7132F5]/30 text-[#D8B4FE] font-mono text-sm font-bold flex items-center justify-between">
- <span>${platformFee.toFixed(2)}</span>
- <span className="text-[10px] text-white/50">1.0%</span>
- </div>
- </div>
- </div>
- </div>
+        {/* Step tabs */}
+        <div className="flex items-center gap-2 mb-10">
+          {STEPS.map((step, i) => (
+            <React.Fragment key={step.id}>
+              <button onClick={() => goToStep(step.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full font-mono text-xs font-semibold transition-all cursor-pointer border ${
+                  activeStep === step.id
+                    ? 'bg-[#7132F5] border-[#7132F5] text-white shadow-[0_0_20px_rgba(113,50,245,0.4)]'
+                    : activeStep > step.id
+                    ? 'bg-white/[0.06] border-white/20 text-white/70'
+                    : 'bg-transparent border-white/10 text-white/40'
+                }`}>
+                {activeStep > step.id ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <span className="w-4 h-4 rounded-full border border-current flex items-center justify-center text-[10px]">{step.id}</span>}
+                <span className="hidden sm:inline">{step.label}</span>
+                <span className="sm:hidden">{step.short}</span>
+              </button>
+              {i < STEPS.length - 1 && <ChevronRight className="w-3.5 h-3.5 text-white/20 shrink-0" />}
+            </React.Fragment>
+          ))}
+        </div>
 
- {/* Net Payout Summary */}
- <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-950/20 border border-emerald-500/25 text-xs font-mono">
- <span className="text-[#9CA3AF]">You Receive Directly in Wallet:</span>
- <span className="text-emerald-400 font-bold text-sm">
- ${merchantNet.toFixed(2)} USDC (99.0%)
- </span>
- </div>
- </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-start">
+          {/* LEFT: interactive panel */}
+          <div>
+            {/* STEP 1 */}
+            {activeStep === 1 && (
+              <SpotlightCard className="p-6 sm:p-8" spotlightColor="rgba(113,50,245,0.12)">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-white">Configure your payment link</h3>
+                  {nudgeVisible && !focusedField && (
+                    <span className="font-mono text-[10px] text-[#A78BFA] animate-bounce">↓ try it — edit these fields ↓</span>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block font-mono text-[11px] uppercase tracking-wider text-[#9CA3AF] mb-1.5">Payment Title</label>
+                    <input value={title} onChange={(e) => { setTitle(e.target.value); setIsPlaying(false); }}
+                      onFocus={() => setFocusedField('title')} onBlur={() => setFocusedField(null)}
+                      placeholder="e.g. Design Consultation" className={getInputClass('title')} />
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[11px] uppercase tracking-wider text-[#9CA3AF] mb-1.5">Amount (USDC)</label>
+                    <input type="number" value={amount} onChange={(e) => { setAmount(e.target.value); setIsPlaying(false); }}
+                      onFocus={() => setFocusedField('amount')} onBlur={() => setFocusedField(null)}
+                      placeholder="500" className={getInputClass('amount')} />
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[11px] uppercase tracking-wider text-[#9CA3AF] mb-1.5">Description (optional)</label>
+                    <input value={description} onChange={(e) => { setDescription(e.target.value); setIsPlaying(false); }}
+                      onFocus={() => setFocusedField('description')} onBlur={() => setFocusedField(null)}
+                      placeholder="What is this payment for?" className={getInputClass('description')} />
+                  </div>
+                  <div className="pt-2 p-4 rounded-xl bg-black/40 border border-white/[0.07] font-mono text-xs space-y-1.5">
+                    <div className="flex justify-between text-[#9CA3AF]"><span>Platform fee (1%)</span><span className="text-[#D8B4FE]">${fee}</span></div>
+                    <div className="flex justify-between font-bold"><span className="text-white/60">You receive</span><span className="text-emerald-400">${net} USDC</span></div>
+                  </div>
+                </div>
+                <button onClick={handleNext} className="mt-6 w-full py-3.5 rounded-xl bg-[#7132F5] hover:bg-[#854BFF] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-[0_0_30px_rgba(113,50,245,0.4)] cursor-pointer">
+                  Generate Link <ArrowRight className="w-4 h-4" />
+                </button>
+              </SpotlightCard>
+            )}
 
- {/* Generated Mockup Right Column */}
- <div className="lg:col-span-5 p-5 rounded-2xl bg-black border border-white/15 relative space-y-4">
- <div className="flex items-center justify-between text-xs text-[#9CA3AF] pb-3 border-b border-white/10">
- <span className="font-mono text-[#A78BFA]">Generated Pay Link</span>
- <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-500/20">
- Ready to share
- </span>
- </div>
+            {/* STEP 2 */}
+            {activeStep === 2 && (
+              <SpotlightCard className="p-6 sm:p-8" spotlightColor="rgba(113,50,245,0.12)">
+                <h3 className="text-lg font-bold text-white mb-6">Share your payment link</h3>
+                <div className="p-4 rounded-xl bg-black/60 border border-[#7132F5]/30 mb-5">
+                  <div className="font-mono text-[11px] text-[#9CA3AF] uppercase tracking-wider mb-1">Your InkDrop Link</div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-mono text-sm text-[#C4B5FD] truncate">{paymentUrl}</span>
+                    <button onClick={handleCopyLink} className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#7132F5]/20 border border-[#7132F5]/40 text-[#C4B5FD] font-mono text-xs font-semibold hover:bg-[#7132F5]/30 transition-all cursor-pointer">
+                      {copiedLink ? <><Check className="w-3.5 h-3.5 text-emerald-400" /><span>Copied!</span></> : <><Copy className="w-3.5 h-3.5" /><span>Copy</span></>}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-3 mb-6">
+                  {[{ icon: Globe, label: 'Share via link, email, or invoice' }, { icon: Wallet, label: 'Client pays with any Ink Chain wallet' }, { icon: ShieldCheck, label: 'Smart contract routes funds directly to you' }].map(({ icon: Icon, label }) => (
+                    <div key={label} className="flex items-center gap-3 text-sm text-[#9CA3AF]"><Icon className="w-4 h-4 text-[#8B5CF6] shrink-0" />{label}</div>
+                  ))}
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={handleBack} className="px-5 py-3 rounded-xl border border-white/15 bg-white/[0.03] hover:bg-white/[0.07] text-white font-mono text-xs font-semibold transition-all cursor-pointer">Back</button>
+                  <button onClick={handleNext} className="flex-1 py-3 rounded-xl bg-[#7132F5] hover:bg-[#854BFF] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-[0_0_30px_rgba(113,50,245,0.35)] cursor-pointer">
+                    Simulate Payment <Zap className="w-4 h-4" />
+                  </button>
+                </div>
+              </SpotlightCard>
+            )}
 
- <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 font-mono text-xs">
- <div className="text-[10px] text-[#9CA3AF] mb-1">Live Endpoint</div>
- <div className="text-white font-bold truncate text-sm text-[#C4B5FD]">
- inkdrop.link/pay/inv-{customAmount}
- </div>
- </div>
+            {/* STEP 3 */}
+            {activeStep === 3 && (
+              <SpotlightCard className="p-6 sm:p-8" spotlightColor="rgba(16,185,129,0.1)">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center"><CheckCircle2 className="w-5 h-5 text-emerald-400" /></div>
+                  <div><div className="font-bold text-white">Payment Confirmed</div><div className="font-mono text-xs text-emerald-400">~1.8s · Ink Chain L2</div></div>
+                </div>
+                <div className="p-4 rounded-xl bg-black/60 border border-emerald-500/20 space-y-3 mb-5 font-mono text-xs">
+                  <div className="flex justify-between"><span className="text-[#9CA3AF]">Amount sent</span><span className="text-white font-bold">${amount} USDC</span></div>
+                  <div className="flex justify-between"><span className="text-[#9CA3AF]">Platform fee (1%)</span><span className="text-[#D8B4FE]">-${fee}</span></div>
+                  <div className="h-px bg-white/[0.06]" />
+                  <div className="flex justify-between"><span className="text-[#9CA3AF] font-bold">You received</span><span className="text-emerald-400 font-black text-sm">${net} USDC</span></div>
+                  <div className="h-px bg-white/[0.06]" />
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#9CA3AF]">Tx hash</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white/70">{FAKE_HASH}</span>
+                      <button onClick={handleCopyHash} className="text-[#A78BFA] hover:text-white transition-colors cursor-pointer">{copiedHash ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}</button>
+                      <a href="https://explorer.inkonchain.com" target="_blank" rel="noreferrer" className="text-[#A78BFA] hover:text-white transition-colors"><ExternalLink className="w-3 h-3" /></a>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={handleReset} className="flex-1 py-3 rounded-xl border border-white/15 bg-white/[0.03] hover:bg-white/[0.07] text-white font-mono text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-2">
+                    <RotateCcw className="w-3.5 h-3.5" /> Try Again
+                  </button>
+                  <button onClick={onOpenCreateModal} className="flex-1 py-3 rounded-xl bg-[#7132F5] hover:bg-[#854BFF] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-[0_0_30px_rgba(113,50,245,0.35)] cursor-pointer">
+                    Create Real Link <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </SpotlightCard>
+            )}
+          </div>
 
- <div className="space-y-2 text-xs">
- <div className="flex justify-between py-1 border-b border-white/5">
- <span className="text-[#9CA3AF]">Recipient:</span>
- <span className="text-white font-mono">alex.ink (0x4F92...B8c1)</span>
- </div>
- <div className="flex justify-between py-1 border-b border-white/5">
- <span className="text-[#9CA3AF]">Requested Volume:</span>
- <span className="text-white font-bold font-mono">${customAmount.toFixed(2)} USDC</span>
- </div>
- <div className="flex justify-between py-1">
- <span className="text-[#9CA3AF]">Fee Transparency:</span>
- <span className="text-purple-300 font-mono font-bold">1% ($ {platformFee.toFixed(2)})</span>
- </div>
- </div>
-
- <button
- onClick={() => handleStepClick(2)}
- className="w-full py-2.5 rounded-lg bg-[#7132F5] hover:bg-[#854BFF] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#7132F5]/30"
- >
- <span>Simulate Next: Payer Experience →</span>
- </button>
- </div>
- </div>
- )}
-
- {/* STAGE 2: PRIVY MPC AUTH (NO WALLET NEEDED) */}
- {activeStep === 2 && (
- <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-in fade-in duration-300">
- <div className="lg:col-span-7 space-y-4">
- <div className="space-y-1">
- <span className="font-mono text-xs uppercase tracking-wider text-[#A78BFA]">
- Step 2 · Zero-Friction Payer Handshake
- </span>
- <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
- Payers don&apos;t need crypto wallets.
- </h3>
- <p className="text-sm text-[#9CA3AF] leading-relaxed">
- Most clients don&apos;t have MetaMask or testnet gas. With Privy embedded auth, entering their email automatically generates a non-custodial MPC wallet in 380 milliseconds.
- </p>
- </div>
-
- <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-3 text-xs">
- <div className="flex items-center justify-between text-[#9CA3AF]">
- <span>Payer Authentication Layer</span>
- <span className="text-[#D8B4FE] font-mono">Privy MPC v2.4</span>
- </div>
-
- <div className="flex flex-col sm:flex-row gap-2">
- <input
- type="email"
- value={payerEmail}
- onChange={(e) => setPayerEmail(e.target.value)}
- className="w-full px-3 py-2 bg-black rounded-lg border border-white/15 text-white font-mono text-xs"
- placeholder="payer@company.com"
- />
- <button
- onClick={() => playMicroSound('tick')}
- className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold text-xs whitespace-nowrap cursor-pointer"
- >
- Send 6-Digit OTP
- </button>
- </div>
-
- <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
- <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5 text-center">
- <span className="text-[10px] text-[#9CA3AF] block font-mono">Key Fragment 1</span>
- <span className="text-emerald-400 font-bold font-mono text-xs">Payer Device</span>
- </div>
- <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5 text-center">
- <span className="text-[10px] text-[#9CA3AF] block font-mono">Key Fragment 2</span>
- <span className="text-purple-400 font-bold font-mono text-xs">Privy Cloud HSM</span>
- </div>
- <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5 text-center">
- <span className="text-[10px] text-[#9CA3AF] block font-mono">Wallet Setup</span>
- <span className="text-white font-bold font-mono text-xs">0.38 Seconds</span>
- </div>
- </div>
- </div>
-
- <div className="flex items-center gap-2 p-3 rounded-lg bg-[#7132F5]/10 border border-[#7132F5]/30 text-xs font-mono text-[#D8B4FE]">
- <CheckCircle2 className="w-4 h-4 text-[#8B5CF6] shrink-0" />
- <span>Zero seed phrases · Biometric FaceID/TouchID confirmation in 1 tap</span>
- </div>
- </div>
-
- {/* Payer Verification Card Right */}
- <div className="lg:col-span-5 p-5 rounded-2xl bg-black border border-white/15 space-y-4">
- <div className="flex items-center justify-between pb-3 border-b border-white/10">
- <span className="font-mono text-xs text-white font-bold">Privy Session Verified</span>
- <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
- </div>
-
- <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 text-center space-y-2">
- <div className="w-12 h-12 rounded-full bg-[#7132F5] text-white font-extrabold flex items-center justify-center mx-auto text-sm shadow-md">
- PC
- </div>
- <div className="text-white font-bold text-sm">{payerEmail}</div>
- <div className="font-mono text-xs text-[#D8B4FE] bg-black/60 py-1 px-2 rounded border border-white/10">
- 0x6E12...39Fa (MPC Wallet)
- </div>
- </div>
-
- <div className="p-3 rounded-lg bg-white/[0.03] border border-white/5 text-xs text-[#9CA3AF] space-y-1">
- <div className="flex justify-between">
- <span>Balance:</span>
- <span className="text-white font-bold font-mono">${customAmount.toFixed(2)} USDC</span>
- </div>
- <div className="flex justify-between">
- <span>Gas Allowance:</span>
- <span className="text-emerald-400 font-mono">Sponsored on Ink</span>
- </div>
- </div>
-
- <button
- onClick={() => handleStepClick(3)}
- className="w-full py-2.5 rounded-lg bg-[#7132F5] hover:bg-[#854BFF] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#7132F5]/30"
- >
- <span>Authorize &amp; Transmit to Ink Chain →</span>
- </button>
- </div>
- </div>
- )}
-
- {/* STAGE 3: INK CHAIN L2 FINALITY */}
- {activeStep === 3 && (
- <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-in fade-in duration-300">
- <div className="lg:col-span-7 space-y-4">
- <div className="space-y-1">
- <span className="font-mono text-xs uppercase tracking-wider text-[#A78BFA]">
- Step 3 · Kraken Superchain L2 Finality
- </span>
- <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
- Sub-second rollup finality. Sub-cent gas.
- </h3>
- <p className="text-sm text-[#9CA3AF] leading-relaxed">
- Ink Chain executes optimistic rollups with instant sequencing by Kraken. While credit cards take 2–7 business days to clear, InkDrop finalizes in ~1.8 seconds.
- </p>
- </div>
-
- {/* Finality Live Gauge */}
- <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-3">
- <div className="flex items-center justify-between text-xs font-mono">
- <span className="text-[#9CA3AF]">Sequencer Finality Timer:</span>
- <span className="text-white font-bold text-sm">
- {isFinalized ? (
- <span className="text-emerald-400 font-bold">CONFIRMED (1.8s)</span>
- ) : (
- <span className="text-[#D8B4FE] animate-pulse">{finalityCountdown}s remaining</span>
- )}
- </span>
- </div>
-
- {/* Progress bar */}
- <div className="w-full h-3 bg-black/80 rounded-full border border-white/15 overflow-hidden p-0.5">
- <div
- className="h-full bg-gradient-to-r from-[#7132F5] via-[#854BFF] to-emerald-400 rounded-full transition-all duration-200"
- style={{
- width: isFinalized ? '100%' : `${((1.8 - finalityCountdown) / 1.8) * 100}%`,
- }}
- />
- </div>
-
- <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px] text-[#9CA3AF]">
- <div>
- <span className="text-white/40 block">Block Height</span>
- <span className="text-white font-bold">#2,948,114</span>
- </div>
- <div>
- <span className="text-white/40 block">Gas Consumed</span>
- <span className="text-emerald-400 font-bold">0.00003 ETH</span>
- </div>
- <div>
- <span className="text-white/40 block">Fiat Equivalent</span>
- <span className="text-white font-bold">&lt; $0.001</span>
- </div>
- </div>
- </div>
- </div>
-
- {/* Block Explorer Inspector Right */}
- <div className="lg:col-span-5 p-5 rounded-2xl bg-black border border-white/15 space-y-4 font-mono text-xs">
- <div className="flex items-center justify-between pb-3 border-b border-white/10">
- <span className="text-[#A78BFA] font-bold">Ink Explorer Telemetry</span>
- <span className="text-emerald-400 text-[10px] bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/20">
- {isFinalized ? 'Finalized' : 'Sequencing'}
- </span>
- </div>
-
- <div className="space-y-2">
- <div className="p-2.5 rounded bg-white/[0.03] border border-white/5">
- <span className="text-white/50 block text-[10px]">Tx Hash</span>
- <span className="text-[#C4B5FD] text-[11px] truncate block">0x71a2e48f...98c4b12</span>
- </div>
- <div className="p-2.5 rounded bg-white/[0.03] border border-white/5">
- <span className="text-white/50 block text-[10px]">Smart Contract</span>
- <span className="text-white text-[11px] truncate block">0x7F8798eA489379659341498B75F348F29aeB5A2</span>
- </div>
- <div className="p-2.5 rounded bg-white/[0.03] border border-white/5">
- <span className="text-white/50 block text-[10px]">Settlement Event</span>
- <span className="text-emerald-400 text-[11px] block">PaymentSplit(creator: 99%, inkdrop: 1%)</span>
- </div>
- </div>
-
- <button
- onClick={() => handleStepClick(4)}
- className="w-full py-2.5 rounded-lg bg-[#7132F5] hover:bg-[#854BFF] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#7132F5]/30 font-sans"
- >
- <span>View Creator Payout Receipt →</span>
- </button>
- </div>
- </div>
- )}
-
- {/* STAGE 4: 99% PAYOUT DIRECT TO WALLET (1% PLATFORM FEE) */}
- {activeStep === 4 && (
- <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-in fade-in duration-300">
- <div className="lg:col-span-7 space-y-4">
- <div className="space-y-1">
- <span className="font-mono text-xs uppercase tracking-wider text-emerald-400">
- Step 4 · Complete Non-Custodial Settlement
- </span>
- <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
- 100% Onchain. 99% lands in your wallet.
- </h3>
- <p className="text-sm text-[#9CA3AF] leading-relaxed">
- No rolling reserves. No merchant freezes. InkDrop takes only a 1% platform fee ($12 on $1,200), saving you $40+ compared to Stripe or PayPal.
- </p>
- </div>
-
- {/* Transparent Split Breakdown Box */}
- <div className="p-4 rounded-xl bg-black border border-white/15 space-y-3 font-mono text-xs">
- <div className="flex items-center justify-between pb-2 border-b border-white/10 font-bold text-white">
- <span>Settlement Breakdown</span>
- <span className="text-emerald-400">PAID IN FULL</span>
- </div>
-
- <div className="flex items-center justify-between">
- <span className="text-[#9CA3AF]">Gross Volume Collected:</span>
- <span className="text-white font-bold">${customAmount.toFixed(2)} USDC</span>
- </div>
-
- <div className="flex items-center justify-between text-purple-300">
- <span className="flex items-center gap-1.5">
- <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]" />
- <span>InkDrop Platform Fee (1.0%):</span>
- </span>
- <span>-${platformFee.toFixed(2)} USDC</span>
- </div>
-
- <div className="flex items-center justify-between text-emerald-400 text-sm font-bold pt-2 border-t border-white/10">
- <span>Net Direct to Your Wallet (99.0%):</span>
- <span>+${merchantNet.toFixed(2)} USDC</span>
- </div>
- </div>
-
- {/* Comparison quote */}
- <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10 text-xs text-[#9CA3AF] flex items-center justify-between">
- <span>Stripe would take: <strong className="text-red-400 font-mono">~$35.10 (2.9% + $0.30)</strong></span>
- <span className="text-emerald-400 font-mono font-bold">You saved: +${(35.10 - platformFee).toFixed(2)}</span>
- </div>
- </div>
-
- {/* Wallet Success Preview Right */}
- <div className="lg:col-span-5 p-5 rounded-2xl bg-gradient-to-b from-[#7132F5]/20 via-black to-black border border-[#7132F5]/40 text-center space-y-4">
- <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-[0_0_25px_rgba(16,185,129,0.3)]">
- <CheckCircle2 className="w-8 h-8" />
- </div>
-
- <div>
- <span className="font-mono text-xs uppercase tracking-widest text-[#A78BFA] font-bold">
- BALANCE CREDITED IMMEDIATELY
- </span>
- <div className="text-3xl font-black text-white font-mono mt-1">
- +${merchantNet.toFixed(2)}
- </div>
- <span className="text-xs font-mono text-[#D8B4FE]">USDC on Ink Chain L2</span>
- </div>
-
- <div className="p-3 rounded-xl bg-black/60 border border-white/10 font-mono text-xs text-left space-y-1 text-[#9CA3AF]">
- <div className="flex justify-between">
- <span>Recipient:</span>
- <span className="text-white">alex.ink</span>
- </div>
- <div className="flex justify-between">
- <span>Status:</span>
- <span className="text-emerald-400">Available to Spend / Transfer</span>
- </div>
- <div className="flex justify-between">
- <span>Bank Hold:</span>
- <span className="text-white">0 Days (Self-Custody)</span>
- </div>
- </div>
-
- <button
- onClick={() => {
- setActiveStep(1);
- setIsPlaying(true);
- playMicroSound('click');
- }}
- className="w-full py-2.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold text-xs tracking-wider transition-colors cursor-pointer"
- >
- Replay Interactive Simulation ↺
- </button>
- </div>
- </div>
- )}
- </SpotlightCard>
- </div>
- );
+          {/* RIGHT: live preview card */}
+          <div className="relative">
+            <div className="font-mono text-[11px] uppercase tracking-wider text-[#9CA3AF] mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />Live Preview
+            </div>
+            <div className="rounded-2xl border border-white/[0.10] bg-gradient-to-b from-white/[0.04] to-black/80 backdrop-blur-xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+              <div className="p-5 border-b border-white/[0.07] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#7132F5]/30 border border-[#7132F5]/50 flex items-center justify-center"><Link2 className="w-3.5 h-3.5 text-[#A78BFA]" /></div>
+                  <span className="font-mono text-xs text-white font-bold">inkdrop.xyz/pay/{slug}</span>
+                </div>
+                <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />LIVE
+                </span>
+              </div>
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div className="text-[11px] font-mono text-[#9CA3AF] uppercase tracking-wider mb-1">{description || 'Payment request'}</div>
+                  <div className="text-4xl font-black text-white font-mono">${amount || '0'}</div>
+                  <div className="text-sm font-mono text-[#D8B4FE] mt-1">USDC · Ink Chain</div>
+                  <div className="mt-1 text-xs font-mono text-[#9CA3AF]">{title}</div>
+                </div>
+                {activeStep === 3 ? (
+                  <div className="py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-sm text-center flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" /> Payment Complete
+                  </div>
+                ) : (
+                  <button className="w-full py-3.5 rounded-xl bg-[#7132F5] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(113,50,245,0.4)] cursor-default">
+                    <Wallet className="w-4 h-4" /> Connect Wallet & Pay
+                  </button>
+                )}
+                <div className="mt-4 flex items-center justify-between font-mono text-[11px] text-[#9CA3AF]">
+                  <span className="flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5 text-[#8B5CF6]" />Non-custodial</span>
+                  <span className="flex items-center gap-1"><Zap className="w-3.5 h-3.5 text-[#8B5CF6]" />~1.8s finality</span>
+                  <span className="flex items-center gap-1"><TrendingUp className="w-3.5 h-3.5 text-[#8B5CF6]" />1% fee only</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 };
