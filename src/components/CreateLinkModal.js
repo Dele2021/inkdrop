@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { X, Check, Copy, ArrowRight, Sparkles, QrCode, Link2 } from 'lucide-react';
 import { UsdcIcon, InkChainIcon } from './Icons';
-import { PaymentLink } ;
 import { playMicroSound } from '../utils/sound';
 
 
