@@ -127,7 +127,7 @@ export const Navbar = ({
  <button
  onClick={() => {
  playMicroSound('click');
- onOpenAuthModal();
+ authenticated ? logout() : login();
  }}
  className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white/90 hover:text-white border border-white/15 hover:border-white/40 rounded-full transition-all duration-200 bg-white/[0.02] hover:bg-white/[0.06] active:scale-95 cursor-pointer"
  >
@@ -184,7 +184,7 @@ export const Navbar = ({
  <button
  onClick={() => {
  setMobileMenuOpen(false);
- onOpenAuthModal();
+ authenticated ? logout() : login();
  }}
  className="w-full py-3 text-sm font-semibold tracking-wider text-white border border-white/20 rounded-xl hover:bg-white/5 active:scale-95 transition-all text-center min-h-[44px]"
  >
