@@ -9,8 +9,8 @@ export const AuthModal = ({ isOpen, onClose, onOpenCreateLink }) => {
   if (!isOpen) return null;
 
   const handleLogin = () => {
+    console.log('Login clicked, ready:', ready, 'authenticated:', authenticated);
     login();
-    onClose();
   };
 
   const handleLogout = () => {
@@ -67,7 +67,7 @@ export const AuthModal = ({ isOpen, onClose, onOpenCreateLink }) => {
 
             <button
               onClick={handleLogin}
-              disabled={!ready}
+              disabled={false}
               className="w-full py-4 rounded-xl bg-[#7132F5] hover:bg-[#854BFF] disabled:opacity-50 text-white font-extrabold text-sm tracking-wide flex items-center justify-center gap-2 transition-all shadow-[0_0_25px_rgba(113,50,245,0.45)] min-h-[52px]"
             >
               Connect Wallet or Email
