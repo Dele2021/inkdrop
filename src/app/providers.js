@@ -31,8 +31,9 @@ export function Providers({ children }) {
         },
         defaultChain: inkMainnet,
         supportedChains: [inkMainnet],
+        walletConnectCloudProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
         loginMethods: ['email', 'wallet'],
-        embeddedWallets: { createOnLogin: 'users-without-wallets' },
+        embeddedWallets: { createOnLogin: 'users-without-wallets', requireUserPasswordOnImport: false },
       }}
     >
       <QueryClientProvider client={queryClient}>
