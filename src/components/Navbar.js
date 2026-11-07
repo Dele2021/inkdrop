@@ -1,5 +1,6 @@
 'use client';
 
+import { usePrivy } from '@privy-io/react-auth';
 import React, { useState, useEffect } from 'react';
 import { InkDropLogo } from './Icons';
 import { Menu, X, ArrowUpRight, Volume2, VolumeX } from 'lucide-react';
@@ -11,7 +12,8 @@ export const Navbar = ({
  onOpenAuthModal,
 }) => {
  const [isScrolled, setIsScrolled] = useState(false);
- const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+ const { login, authenticated, logout } = usePrivy();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
  const [soundActive, setSoundActive] = useState(getSoundEnabled());
 
  useEffect(() => {
