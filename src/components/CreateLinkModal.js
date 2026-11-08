@@ -178,6 +178,9 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
               </div>
 
               <div className="pt-2">
+                {errors.title && <p className="text-red-400 text-xs mb-2">{errors.title}</p>}
+                {errors.payout && <p className="text-red-400 text-xs mb-2">{errors.payout}</p>}
+                {errors.submit && <p className="text-red-400 text-xs mb-2">{errors.submit}</p>}
                 <button type="button" onClick={handleGenerate} className="w-full py-4 rounded-xl bg-[#7132F5] hover:bg-[#854BFF] text-white font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-[0_0_25px_rgba(113,50,245,0.45)] cursor-pointer min-h-[48px]">
                   <span>Generate Payment Link</span><ArrowRight className="w-4 h-4" />
                 </button>
