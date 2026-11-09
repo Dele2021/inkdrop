@@ -131,7 +131,7 @@ export default function PayPage() {
           <div className="w-8 h-8 rounded-full bg-[#7132F5]/20 border border-[#7132F5]/40 flex items-center justify-center">
             <span className="text-[#A78BFA] text-xs font-bold">ID</span>
           </div>
-          <span className="text-gray-400 text-sm font-mono">inkdrop.link/pay/{id}</span>
+          <span className="text-gray-400 text-sm font-mono">{window?.location?.host ?? "inkdrop-eight.vercel.app"}/pay/{id}</span>
         </div>
 
         {/* Link details */}

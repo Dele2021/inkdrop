@@ -57,7 +57,7 @@ export const CreateLinkModal = ({ isOpen, onClose, onTestLink }) => {
   const handleCopy = () => {
     if (!generatedLink) return;
     playMicroSound('click');
-    navigator.clipboard?.writeText(`https://inkdrop.link/pay/${generatedLink.id}`);
+    navigator.clipboard?.writeText(generatedLink.url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
