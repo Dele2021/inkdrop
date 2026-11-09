@@ -1,4 +1,5 @@
-import { kv } from '@vercel/kv';
+import Redis from 'ioredis';
+const kv = new Redis(process.env.REDIS_URL);
 import { NextResponse } from 'next/server';
 
 // POST /api/links — create a new payment link
@@ -24,7 +25,7 @@ export async function POST(request) {
       createdAt: new Date().toISOString(),
     };
 
-    await kv.set(`link:${id}`, link, { ex: 60 * 60 * 24 * 90 }); // 90 days TTL
+    await kv.set(`link:${id}`, JSON.stringify(link), 'EX', 60 * 60 * 24 * 90); // 90 days TTL
 
     return NextResponse.json({ id, url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${id}` });
   } catch (err) {
@@ -39,7 +40,8 @@ export async function GET(request) {
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
-  const link = await kv.get(`link:${id}`);
+  const raw = await kv.get(`link:${id}`);
+  const link = raw ? JSON.parse(raw) : null;
   if (!link) return NextResponse.json({ error: 'Link not found' }, { status: 404 });
 
   return NextResponse.json(link);
