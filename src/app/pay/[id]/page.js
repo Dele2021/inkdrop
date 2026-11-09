@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { createWalletClient, custom, parseUnits, encodeFunctionData } from 'viem';
-import { inkMainnet } from 'viem/chains';
+// Ink Chain (OP Stack L2 by Kraken, Chain ID 57073)
+const inkMainnet = { id: 57073, name: 'Ink', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://rpc-gel.inkonchain.com'] } }, blockExplorers: { default: { name: 'Ink Explorer', url: 'https://explorer.inkonchain.com' } } };
 
 const USDC_ADDRESS = '0xF1815bd50389c46847f0Bda824eC8da914045D14';
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
