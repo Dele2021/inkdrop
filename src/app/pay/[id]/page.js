@@ -23,9 +23,10 @@ const CONTRACT_ABI = [
     name: 'pay',
     type: 'function',
     inputs: [
-      { name: 'recipient', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-      { name: 'linkId', type: 'string' },
+      { name: '_token', type: 'address' },
+      { name: '_seller', type: 'address' },
+      { name: '_amount', type: 'uint256' },
+      { name: '_linkId', type: 'string' },
     ],
     outputs: [],
   },
@@ -80,7 +81,7 @@ export default function PayPage() {
       const payData = encodeFunctionData({
         abi: CONTRACT_ABI,
         functionName: 'pay',
-        args: [link.payoutAddress, amount, id],
+        args: [USDC_ADDRESS, link.payoutAddress, amount, id],
       });
       const hash = await client.sendTransaction({ account: address, to: CONTRACT_ADDRESS, data: payData });
 
