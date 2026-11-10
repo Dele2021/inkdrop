@@ -70,7 +70,11 @@ export default function PayPage() {
         functionName: 'approve',
         args: [CONTRACT_ADDRESS, amount],
       });
-      await client.sendTransaction({ account: address, to: USDC_ADDRESS, data: approveData });
+      const approveTx = await client.sendTransaction({ account: address, to: USDC_ADDRESS, data: approveData });
+
+      // Wait for approve to be mined
+      const publicClient = createPublicClient({ chain: inkMainnet, transport: custom(provider) });
+      await publicClient.waitForTransactionReceipt({ hash: approveTx });
 
       // Step 2: Pay via contract
       const payData = encodeFunctionData({
