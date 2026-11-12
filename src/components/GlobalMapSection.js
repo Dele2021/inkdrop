@@ -1,0 +1,107 @@
+'use client';
+import React from 'react';
+
+const cities = [
+  { name: 'London',    x: 480, y: 148 },
+  { name: 'New York',  x: 270, y: 178 },
+  { name: 'Lagos',     x: 490, y: 268 },
+  { name: 'Dubai',     x: 598, y: 210 },
+  { name: 'Singapore', x: 730, y: 290 },
+  { name: 'Tokyo',     x: 798, y: 178 },
+  { name: 'Sao Paulo', x: 310, y: 338 },
+  { name: 'Sydney',    x: 820, y: 370 },
+];
+const arcs = [[0,1,0],[0,2,0.6],[0,3,1.1],[1,6,0.3],[3,4,0.8],[4,5,0.4],[2,3,1.4],[1,0,1.8],[4,7,1.0],[5,2,2.2]];
+
+function arcPath(a, b) {
+  const mx = (a.x + b.x) / 2;
+  const my = Math.min(a.y, b.y) - Math.abs(b.x - a.x) * 0.22;
+  return `M${a.x},${a.y} Q${mx},${my} ${b.x},${b.y}`;
+}
+
+export const GlobalMapSection = () => (
+  <section className="relative py-28 px-4 sm:px-6 lg:px-8 border-t border-white/[0.06] bg-[#060810] overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none"
+      style={{ background: 'radial-gradient(ellipse at 50% 60%, rgba(113,50,245,0.08) 0%, transparent 65%)' }} />
+    <div className="max-w-7xl mx-auto relative">
+      <div className="mb-4">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#A78BFA] font-semibold">[ GLOBAL ]</span>
+      </div>
+      <div className="max-w-2xl mb-10">
+        <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
+          Instant payments, anywhere on earth.
+        </h2>
+        <p className="text-base sm:text-lg text-[#9CA3AF]">
+          Every InkDrop payment settles in under 2 seconds on Ink Chain — from London to Lagos, New York to Singapore.
+        </p>
+      </div>
+      <div className="relative w-full rounded-2xl overflow-hidden border border-white/[0.07] bg-[#07090f]"
+        style={{ boxShadow: '0 0 80px -20px rgba(113,50,245,0.25)' }}>
+        <svg viewBox="0 0 1000 500" className="w-full">
+          <defs>
+            <filter id="mapGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            {arcs.map(([si,di],i) => (
+              <linearGradient key={i} id={`maparc${i}`}
+                x1={cities[si].x} y1={cities[si].y}
+                x2={cities[di].x} y2={cities[di].y}
+                gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#7132F5" stopOpacity="0.9"/>
+                <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.5"/>
+              </linearGradient>
+            ))}
+          </defs>
+          <rect width="1000" height="500" fill="#07090f"/>
+          {Array.from({length:38}).map((_,row) =>
+            Array.from({length:77}).map((_,col) => (
+              <circle key={`${row}-${col}`} cx={col*13+6} cy={row*13+6} r="0.6" fill="#ffffff" opacity="0.05"/>
+            ))
+          )}
+          {arcs.map(([si,di,delay],i) => {
+            const a = cities[si], b = cities[di];
+            const d = arcPath(a,b);
+            return (
+              <path key={i} d={d} fill="none" stroke={`url(#maparc${i})`} strokeWidth="1.2" opacity="0.7"
+                strokeDasharray="300" strokeDashoffset="300"
+                style={{ animation: `drawArc 1.8s ease-out forwards`, animationDelay: `${delay}s` }}/>
+            );
+          })}
+          {arcs.map(([si,di,delay],i) => {
+            const a = cities[si], b = cities[di];
+            const d = arcPath(a,b);
+            return (
+              <g key={`td${i}`} filter="url(#mapGlow)">
+                <circle r="3" fill="#A78BFA" opacity="0.95">
+                  <animateMotion dur="2.4s" repeatCount="indefinite" begin={`${delay+0.3}s`} path={d}/>
+                </circle>
+              </g>
+            );
+          })}
+          {cities.map((c,i) => (
+            <g key={c.name}>
+              <circle cx={c.x} cy={c.y} r="10" fill="#7132F5" opacity="0.08"
+                style={{ animation: `cityPulse 3s ease-in-out infinite`, animationDelay: `${i*0.3}s` }}/>
+              <circle cx={c.x} cy={c.y} r="4" fill="#0a0d14" stroke="#8B5CF6" strokeWidth="1.2"/>
+              <circle cx={c.x} cy={c.y} r="2" fill="#C4B5FD"/>
+              <text x={c.x} y={c.y-9} textAnchor="middle" fontSize="10" fill="#9CA3AF" fontFamily="monospace" fontWeight="600">{c.name}</text>
+            </g>
+          ))}
+        </svg>
+        <div className="flex flex-wrap items-center justify-around gap-4 px-6 py-4 border-t border-white/[0.07]">
+          {[['~1.8s','Settlement'],['< $0.001','Gas cost'],['24/7','Always live'],['57073','Ink Chain ID']].map(([v,l]) => (
+            <div key={l} className="text-center">
+              <div className="font-mono text-lg font-extrabold text-white">{v}</div>
+              <div className="font-mono text-[10px] text-[#9CA3AF] uppercase tracking-wider">{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+    <style>{`
+      @keyframes drawArc { to { stroke-dashoffset: 0; } }
+      @keyframes cityPulse { 0%,100%{r:10;opacity:0.08} 50%{r:16;opacity:0.14} }
+    `}</style>
+  </section>
+);
