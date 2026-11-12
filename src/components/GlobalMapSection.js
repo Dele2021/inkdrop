@@ -62,7 +62,7 @@ const CONNECTIONS = [
   [0, 9], [2, 1], [4, 7],
 ];
 
-export default function GlobalMapSection() {
+export function GlobalMapSection() {
   const canvasRef = useRef(null);
 
   useEffect(() => {

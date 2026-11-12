@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 
-export default function NetworkSection() {
+export function NetworkSection() {
   const canvasRef = useRef(null);
 
   useEffect(() => {
