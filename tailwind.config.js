@@ -7,33 +7,37 @@ module.exports = {
   ],
   theme: {
     extend: {
-      colors: {
-        'ink-bg': 'var(--ink-bg)',
-        'ink-surface': 'var(--ink-surface)',
-        'ink-card': 'var(--ink-card)',
-        'ink-card-hover': 'var(--ink-card-hover)',
-        'ink-purple': 'var(--ink-purple)',
-        'ink-light': 'var(--ink-light)',
-        'ink-soft': 'var(--ink-soft)',
-        'ink-success': 'var(--ink-success)',
-        'ink-warning': 'var(--ink-warning)',
-        'ink-error': 'var(--ink-error)',
-      },
       fontFamily: {
-        display: ['Satoshi', 'system-ui', '-apple-system', 'sans-serif'],
-        body: ['Satoshi', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['SF Mono', 'Fira Code', 'Cascadia Code', 'ui-monospace', 'monospace'],
+        sans: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
-      borderRadius: {
-        'ink': '12px',
-        'ink-lg': '16px',
-        'ink-xl': '24px',
+      colors: {
+        ink: {
+          purple: '#7132F5',
+          'purple-light': '#854BFF',
+          'purple-dark': '#5B1FCC',
+        },
       },
-      boxShadow: {
-        'ink-glow': '0 0 24px rgba(113, 50, 245, 0.25)',
-        'ink-glow-lg': '0 0 48px rgba(113, 50, 245, 0.15), 0 0 96px rgba(113, 50, 245, 0.08)',
+      animation: {
+        'hero-float': 'heroFloat 7s ease-in-out infinite',
+        'glow-pulse': 'glowPulse 8s ease-in-out infinite',
+        'fade-in': 'fadeIn 0.4s ease-out forwards',
+      },
+      keyframes: {
+        heroFloat: {
+          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+          '50%': { transform: 'translateY(-12px) rotate(0.75deg)' },
+        },
+        glowPulse: {
+          '0%, 100%': { opacity: '0.35', transform: 'scale(1)' },
+          '50%': { opacity: '0.55', transform: 'scale(1.08)' },
+        },
+        fadeIn: {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
       },
     },
   },
   plugins: [],
-}
+};
