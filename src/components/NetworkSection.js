@@ -41,8 +41,8 @@ export const NetworkSection = () => {
     canvas.height = H * window.devicePixelRatio;
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-    const cx = W / 2, cy = H / 2;
-    const R = Math.min(W, H) * 0.42;
+    const cx = W / 2, cy = H * 0.52;
+    const R = Math.min(W, H) * 0.62;
 
     // Build geodesic grid points
     const gridLines = [];
