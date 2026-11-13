@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 
-export function NetworkSection() {
+export const NetworkSection = () => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -215,4 +215,4 @@ export function NetworkSection() {
       </div>
     </section>
   );
-}
+};
