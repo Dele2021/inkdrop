@@ -36,11 +36,12 @@ export const GlobalMapSection = () => {
     canvas.height = H * window.devicePixelRatio;
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-    // Mercator projection with padding
-    const padX = W * 0.05, padY = H * 0.08;
+    // Zoom into the inhabited world (roughly lon -100..160, lat -40..70)
+    const lonMin = -105, lonMax = 165, latMin = -42, latMax = 72;
+    const padX = W * 0.04, padY = H * 0.06;
     function project(lat, lon) {
-      const x = padX + ((lon + 180) / 360) * (W - padX * 2);
-      const y = padY + ((90 - lat) / 180) * (H - padY * 2);
+      const x = padX + ((lon - lonMin) / (lonMax - lonMin)) * (W - padX * 2);
+      const y = padY + ((latMax - lat) / (latMax - latMin)) * (H - padY * 2);
       return { x, y };
     }
 
@@ -221,7 +222,7 @@ export const GlobalMapSection = () => {
         </div>
 
         <div className="relative rounded-2xl overflow-hidden border border-white/[0.08]"
-          style={{ height: 320, background: 'linear-gradient(180deg, #060412 0%, #020408 100%)' }}>
+          style={{ height: 380, background: 'linear-gradient(180deg, #060412 0%, #020408 100%)' }}>
           <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }} />
           <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
             style={{ background: 'linear-gradient(to top, #04060f, transparent)' }} />

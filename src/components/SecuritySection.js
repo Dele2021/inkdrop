@@ -7,10 +7,10 @@ import { playMicroSound } from '../utils/sound';
 const CONTRACT = '0x9a333b47A2C4B71a7c71b1b4843316135Dca0AB9';
 
 const cards = [
-  { title: 'Straight to your wallet', desc: 'Funds go from payer to you in one transaction. InkDrop has no balance of yours to freeze or lose.', accent: '#8B5CF6', glow: 'rgba(139,92,246,0.12)', icon: Lock },
-  { title: 'Every payment is public', desc: 'Each receipt links to the transaction on Ink Explorer, so you and your client can both check it.', accent: '#3B82F6', glow: 'rgba(59,130,246,0.1)', icon: Eye },
-  { title: 'Code you can read', desc: 'The contract source is published and verified on the explorer. What we can change: fee (capped at 5%). Nothing else.', accent: '#10B981', glow: 'rgba(16,185,129,0.1)', icon: ShieldCheck },
-  { title: 'No KYC required', desc: "Connect a wallet. Create a link. That's it. No document uploads, credit checks, or artificial account freezes.", accent: '#F59E0B', glow: 'rgba(245,158,11,0.08)', icon: Lock },
+  { title: 'Straight to your wallet', desc: 'Every payment moves peer-to-peer in a single on-chain transaction. InkDrop never holds your funds — there is no balance to freeze, seize, or lose.', accent: '#8B5CF6', glow: 'rgba(139,92,246,0.12)', icon: Lock },
+  { title: 'Every payment is public', desc: 'Each settled payment leaves a permanent receipt on the Ink blockchain. You and your client can verify it independently — no disputes, no he-said-she-said.', accent: '#3B82F6', glow: 'rgba(59,130,246,0.1)', icon: Eye },
+  { title: 'Open-source contract', desc: 'The InkDrop contract is published, verified, and readable by anyone on Ink Explorer. The only parameter we can adjust is the fee — capped at 5%. Nothing else is changeable.', accent: '#10B981', glow: 'rgba(16,185,129,0.1)', icon: ShieldCheck },
+  { title: 'No KYC, no gatekeeping', desc: "Connect a wallet. Create a link. That's it. No identity documents, no credit checks, no waiting for approval. If you have a wallet, you can get paid.", accent: '#F59E0B', glow: 'rgba(245,158,11,0.08)', icon: Lock },
 ];
 
 export const SecuritySection = () => {
