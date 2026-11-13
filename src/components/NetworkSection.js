@@ -1,5 +1,30 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { SpotlightCard } from './SpotlightCard';
+
+const cards = [
+  {
+    tag: 'FREELANCERS',
+    title: 'Get paid in seconds',
+    desc: 'Share a link. Client pays in USDC. Funds arrive in your wallet instantly — no bank, no wait.',
+    accent: '#8B5CF6',
+    glow: 'rgba(139,92,246,0.12)',
+  },
+  {
+    tag: 'GLOBAL SELLERS',
+    title: 'No borders, no fees',
+    desc: 'Accept payments from anywhere on earth. No currency conversion, no international transfer delays.',
+    accent: '#3B82F6',
+    glow: 'rgba(59,130,246,0.10)',
+  },
+  {
+    tag: 'BUSINESSES',
+    title: 'Checkout without friction',
+    desc: 'Create payment links in one click. Customers pay directly from their wallet — no signup required.',
+    accent: '#10B981',
+    glow: 'rgba(16,185,129,0.10)',
+  },
+];
 
 export const NetworkSection = () => {
   const canvasRef = useRef(null);
@@ -9,20 +34,22 @@ export const NetworkSection = () => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let animFrame;
-    let t = 0;
 
-    const W = canvas.offsetWidth;
-    const H = canvas.offsetHeight;
-    canvas.width = W * window.devicePixelRatio;
-    canvas.height = H * window.devicePixelRatio;
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    const resize = () => {
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      return { W, H };
+    };
 
+    let { W, H } = resize();
     const cx = W / 2, cy = H / 2;
     const R = Math.min(W, H) * 0.38;
 
-    // Geodesic sphere lines
+    // Build geodesic grid
     const gridLines = [];
-    // Latitude rings
     for (let lat = -75; lat <= 75; lat += 15) {
       const pts = [];
       for (let lon = 0; lon <= 360; lon += 3) {
@@ -31,13 +58,11 @@ export const NetworkSection = () => {
         const x3 = R * Math.cos(phi) * Math.cos(theta);
         const y3 = R * Math.sin(phi);
         const z3 = R * Math.cos(phi) * Math.sin(theta);
-        // perspective
-        const scale = (R * 2) / (R * 2 + z3);
-        pts.push({ x: cx + x3 * scale, y: cy - y3 * scale, z: z3 });
+        const sc = (R * 2) / (R * 2 + z3);
+        pts.push({ x: cx + x3 * sc, y: cy - y3 * sc, z: z3 });
       }
       gridLines.push(pts);
     }
-    // Longitude meridians
     for (let lon = 0; lon < 360; lon += 15) {
       const pts = [];
       for (let lat = -90; lat <= 90; lat += 3) {
@@ -46,22 +71,22 @@ export const NetworkSection = () => {
         const x3 = R * Math.cos(phi) * Math.cos(theta);
         const y3 = R * Math.sin(phi);
         const z3 = R * Math.cos(phi) * Math.sin(theta);
-        const scale = (R * 2) / (R * 2 + z3);
-        pts.push({ x: cx + x3 * scale, y: cy - y3 * scale, z: z3 });
+        const sc = (R * 2) / (R * 2 + z3);
+        pts.push({ x: cx + x3 * sc, y: cy - y3 * sc, z: z3 });
       }
       gridLines.push(pts);
     }
 
-    // Animated arcs — colorful, like doublezero
-    const arcColors = ['#8B5CF6','#6366F1','#EC4899','#F59E0B','#10B981','#3B82F6','#EF4444','#F97316'];
-    const arcs = Array.from({ length: 12 }, (_, i) => ({
+    const arcColors = ['#A78BFA', '#8B5CF6', '#7132F5', '#3B82F6', '#10B981', '#C4B5FD', '#6366F1', '#F59E0B'];
+
+    const arcs = Array.from({ length: 10 }, (_, i) => ({
       lat1: (Math.random() - 0.5) * 150,
       lon1: Math.random() * 360,
       lat2: (Math.random() - 0.5) * 150,
       lon2: Math.random() * 360,
       color: arcColors[i % arcColors.length],
       progress: Math.random(),
-      speed: 0.003 + Math.random() * 0.004,
+      speed: 0.003 + Math.random() * 0.003,
     }));
 
     function latLonTo3D(lat, lon) {
@@ -75,15 +100,13 @@ export const NetworkSection = () => {
     }
 
     function project(p) {
-      const scale = (R * 2) / (R * 2 + p.z);
-      return { x: cx + p.x * scale, y: cy - p.y * scale, z: p.z };
+      const sc = (R * 2) / (R * 2 + p.z);
+      return { x: cx + p.x * sc, y: cy - p.y * sc, z: p.z };
     }
 
     function slerp(a, b, t) {
-      // spherical interpolation
-      const dot = (a.x * b.x + a.y * b.y + a.z * b.z) / (R * R);
-      const clamped = Math.max(-1, Math.min(1, dot));
-      const omega = Math.acos(clamped);
+      const dot = Math.max(-1, Math.min(1, (a.x * b.x + a.y * b.y + a.z * b.z) / (R * R)));
+      const omega = Math.acos(dot);
       if (Math.abs(omega) < 0.001) return a;
       const s = Math.sin(omega);
       return {
@@ -96,23 +119,22 @@ export const NetworkSection = () => {
     function draw() {
       ctx.clearRect(0, 0, W, H);
 
-      // Draw grid lines (only front-facing)
+      // Grid lines
       gridLines.forEach(pts => {
         ctx.beginPath();
         let started = false;
         pts.forEach(p => {
-          if (p.z > -R * 0.3) {
-            const alpha = Math.max(0, (p.z + R * 0.3) / (R * 1.3));
+          if (p.z > -R * 0.2) {
             if (!started) { ctx.moveTo(p.x, p.y); started = true; }
             else ctx.lineTo(p.x, p.y);
           } else { started = false; }
         });
-        ctx.strokeStyle = `rgba(170,170,180,${0.25})`;
+        ctx.strokeStyle = 'rgba(167,139,250,0.12)';
         ctx.lineWidth = 0.5;
         ctx.stroke();
       });
 
-      // Draw arcs
+      // Animated arcs
       arcs.forEach(arc => {
         arc.progress += arc.speed;
         if (arc.progress > 1.3) {
@@ -125,8 +147,6 @@ export const NetworkSection = () => {
 
         const p1 = latLonTo3D(arc.lat1, arc.lon1);
         const p2 = latLonTo3D(arc.lat2, arc.lon2);
-
-        // Draw trail
         const trailLen = 0.18;
         const start = Math.max(0, arc.progress - trailLen);
         const end = Math.min(1, arc.progress);
@@ -139,17 +159,18 @@ export const NetworkSection = () => {
           const frac = start + (end - start) * (s / steps);
           const p = slerp(p1, p2, frac);
           const proj = project(p);
-          if (proj.z < -R * 0.1) continue; // behind sphere
+          if (proj.z < -R * 0.1) continue;
           if (first) { ctx.moveTo(proj.x, proj.y); first = false; }
           else ctx.lineTo(proj.x, proj.y);
         }
 
         const alpha = Math.min(1, Math.min(arc.progress / 0.1, (1.3 - arc.progress) / 0.3));
-        ctx.strokeStyle = arc.color + Math.round(alpha * 200).toString(16).padStart(2, '0');
+        const hex = Math.round(alpha * 220).toString(16).padStart(2, '0');
+        ctx.strokeStyle = arc.color + hex;
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // Dot at head
+        // Head dot
         if (arc.progress < 1) {
           const headPt = slerp(p1, p2, Math.min(1, arc.progress));
           const headProj = project(headPt);
@@ -162,7 +183,6 @@ export const NetworkSection = () => {
         }
       });
 
-      t += 0.005;
       animFrame = requestAnimationFrame(draw);
     }
 
@@ -170,46 +190,44 @@ export const NetworkSection = () => {
     return () => cancelAnimationFrame(animFrame);
   }, []);
 
-  const cards = [
-    {
-      tag: 'FREELANCERS',
-      title: 'Get paid in seconds',
-      desc: 'Share a link. Client pays in USDC. Funds arrive in your wallet instantly — no bank, no wait.',
-    },
-    {
-      tag: 'GLOBAL SELLERS',
-      title: 'No borders, no fees',
-      desc: 'Accept payments from anywhere. No currency conversion. No international transfer delays.',
-    },
-    {
-      tag: 'BUSINESSES',
-      title: 'Checkout without friction',
-      desc: 'Create payment links in one click. Customers pay directly from their wallet — no signup required.',
-    },
-  ];
-
   return (
-    <section className="bg-gray-50 py-24">
-      <div className="max-w-6xl mx-auto px-6">
-        <h2 className="text-4xl md:text-5xl font-light text-center text-gray-900 mb-4" style={{ fontFamily: 'Georgia, serif' }}>
-          Payments Without Borders
-        </h2>
-        <p className="text-center text-gray-500 mb-12 text-lg">Send USDC globally. Arrive instantly. Keep what you earn.</p>
-
-        <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-100" style={{ height: 420 }}>
-          <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }} />
+    <section className="relative py-28 px-4 sm:px-6 lg:px-8 border-t border-white/[0.06] bg-[#020408] overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(113,50,245,0.08) 0%, transparent 70%)' }} />
+      <div className="max-w-7xl mx-auto relative">
+        <div className="mb-4">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#A78BFA] font-semibold">[ 00 / NETWORK ]</span>
+        </div>
+        <div className="max-w-3xl mb-14">
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
+            Payments crossing borders in seconds.
+          </h2>
+          <p className="text-base sm:text-lg text-[#9CA3AF]">
+            InkDrop runs on Ink — a global settlement layer that moves money like the internet moves information.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          {cards.map((c, i) => (
-            <div key={i} className="bg-white border border-gray-100 rounded-2xl p-6">
+        {/* Globe canvas */}
+        <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] mb-10"
+          style={{ height: 380, background: 'radial-gradient(ellipse at 50% 50%, #0d0520 0%, #020408 70%)' }}>
+          <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }} />
+          {/* Fade bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, #020408, transparent)' }} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          {cards.map(c => (
+            <SpotlightCard key={c.tag} className="flex flex-col" spotlightColor={c.glow}>
+              <div className="absolute top-0 left-0 right-0 h-[2px] opacity-60"
+                style={{ background: `linear-gradient(90deg, transparent, ${c.accent}, transparent)` }} />
               <div className="flex items-center gap-2 mb-4">
-                <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />
-                <span className="text-xs font-semibold tracking-widest text-gray-500">{c.tag}</span>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.accent }} />
+                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#9CA3AF] font-semibold">{c.tag}</span>
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">{c.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{c.desc}</p>
-            </div>
+              <h3 className="text-xl font-bold text-white mb-3">{c.title}</h3>
+              <p className="text-sm text-[#9CA3AF] leading-relaxed">{c.desc}</p>
+            </SpotlightCard>
           ))}
         </div>
       </div>
