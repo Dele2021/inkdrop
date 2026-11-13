@@ -1,23 +1,24 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 
+// City nodes — same layout as doublezero map
 const CITIES = [
-  { name: 'London',    lat: 51.5,  lon: -0.1  },
-  { name: 'Lagos',     lat: 6.5,   lon: 3.4   },
-  { name: 'New York',  lat: 40.7,  lon: -74.0 },
-  { name: 'Dubai',     lat: 25.2,  lon: 55.3  },
-  { name: 'Singapore', lat: 1.35,  lon: 103.8 },
-  { name: 'Tokyo',     lat: 35.7,  lon: 139.7 },
-  { name: 'São Paulo', lat: -23.5, lon: -46.6 },
-  { name: 'Sydney',    lat: -33.9, lon: 151.2 },
-  { name: 'Nairobi',   lat: -1.3,  lon: 36.8  },
-  { name: 'Mumbai',    lat: 19.1,  lon: 72.9  },
+  { name: 'New York',   lat: 40.7,  lon: -74.0 },
+  { name: 'São Paulo',  lat: -23.5, lon: -46.6 },
+  { name: 'London',     lat: 51.5,  lon: -0.1  },
+  { name: 'Lagos',      lat: 6.5,   lon: 3.4   },
+  { name: 'Nairobi',    lat: -1.3,  lon: 36.8  },
+  { name: 'Dubai',      lat: 25.2,  lon: 55.3  },
+  { name: 'Mumbai',     lat: 19.1,  lon: 72.9  },
+  { name: 'Singapore',  lat: 1.35,  lon: 103.8 },
+  { name: 'Tokyo',      lat: 35.7,  lon: 139.7 },
+  { name: 'Sydney',     lat: -33.9, lon: 151.2 },
 ];
 
 const CONNECTIONS = [
-  [0,2],[0,3],[0,1],[0,4],[2,6],[2,3],
-  [3,4],[4,5],[4,9],[1,8],[5,7],[3,9],
-  [0,9],[2,1],[4,7],
+  [0,2],[0,1],[0,5],[2,3],[2,5],[2,6],
+  [3,4],[4,5],[5,6],[5,7],[6,7],[7,8],
+  [7,9],[8,9],[0,3],[1,3],[2,7],
 ];
 
 export const GlobalMapSection = () => {
@@ -35,118 +36,155 @@ export const GlobalMapSection = () => {
     canvas.height = H * window.devicePixelRatio;
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
+    // Mercator projection with padding
+    const padX = W * 0.05, padY = H * 0.08;
     function project(lat, lon) {
-      const x = ((lon + 180) / 360) * W;
-      const y = ((90 - lat) / 180) * H;
+      const x = padX + ((lon + 180) / 360) * (W - padX * 2);
+      const y = padY + ((90 - lat) / 180) * (H - padY * 2);
       return { x, y };
     }
 
-    // Dot grid — approximate continents
-    const rng = (seed) => { let s = seed; return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; }; };
-    const rand = rng(42);
+    // Deterministic dot grid for continents
     const dots = [];
-    const landRects = [
-      [25,70,-130,-65],[35,65,-10,35],[5,70,30,140],[-30,35,-20,55],
-      [-50,10,-80,-35],[-40,-10,115,155],[60,75,15,60],
+    const seed = (n) => { let s=n*2654435761; return ()=>{ s^=s<<13; s^=s>>17; s^=s<<5; return (s>>>0)/0xffffffff; }; };
+    const r = seed(42);
+    // Continent bounding boxes [latMin, latMax, lonMin, lonMax, density]
+    const regions = [
+      [25,70,-130,-60,220],   // N America
+      [-55,15,-82,-34,120],   // S America
+      [35,70,-10,40,150],     // Europe
+      [-35,37,-18,52,180],    // Africa
+      [5,75,25,145,320],      // Asia
+      [-45,-10,112,154,80],   // Australia
     ];
-    for (let i = 0; i < 900; i++) {
-      const r = landRects[Math.floor(rand() * landRects.length)];
-      const lat = r[0] + rand() * (r[1] - r[0]);
-      const lon = r[2] + rand() * (r[3] - r[2]);
-      dots.push(project(lat, lon));
-    }
+    regions.forEach(([latMin,latMax,lonMin,lonMax,count]) => {
+      for (let i=0; i<count; i++) {
+        const lat = latMin + r()*(latMax-latMin);
+        const lon = lonMin + r()*(lonMax-lonMin);
+        dots.push(project(lat,lon));
+      }
+    });
 
     const cityPos = CITIES.map(c => project(c.lat, c.lon));
 
-    const arcProgress = CONNECTIONS.map(() => Math.random() * 0.4);
+    // Arc draw-in state
+    const arcState = CONNECTIONS.map(() => ({ progress: Math.random() * 0.3, drawn: false }));
 
-    const travellers = CONNECTIONS.map(([a, b]) => ({
-      from: a, to: b,
-      progress: Math.random(),
-      speed: 0.0025 + Math.random() * 0.003,
-    }));
+    // Travelling dots — multiple per connection
+    const travellers = [];
+    CONNECTIONS.forEach(([a,b], i) => {
+      const count = 1 + Math.floor(Math.random() * 2);
+      for (let k=0; k<count; k++) {
+        travellers.push({
+          conn: i, from: a, to: b,
+          progress: k/count + Math.random()*0.3,
+          speed: 0.002 + Math.random()*0.002,
+        });
+      }
+    });
 
-    function bezierPt(p1, p2, t) {
+    function bezierCtrl(p1, p2) {
       const mx = (p1.x + p2.x) / 2;
-      const dist = Math.sqrt((p2.x-p1.x)**2 + (p2.y-p1.y)**2);
-      const cpy = (p1.y + p2.y) / 2 - dist * 0.28;
+      const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y);
+      return { x: mx, y: (p1.y+p2.y)/2 - dist * 0.3 };
+    }
+
+    function bezierPt(p1, cp, p2, t) {
       return {
-        x: (1-t)*(1-t)*p1.x + 2*(1-t)*t*mx + t*t*p2.x,
-        y: (1-t)*(1-t)*p1.y + 2*(1-t)*t*cpy + t*t*p2.y,
+        x: (1-t)*(1-t)*p1.x + 2*(1-t)*t*cp.x + t*t*p2.x,
+        y: (1-t)*(1-t)*p1.y + 2*(1-t)*t*cp.y + t*t*p2.y,
       };
     }
 
     function draw() {
       ctx.clearRect(0, 0, W, H);
 
-      // Dot grid
+      // --- Dot grid ---
       dots.forEach(d => {
         ctx.beginPath();
-        ctx.arc(d.x, d.y, 1.3, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(167,139,250,0.18)';
+        ctx.arc(d.x, d.y, 1.4, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(167,139,250,0.22)';
         ctx.fill();
       });
 
-      // Arcs with glow
-      CONNECTIONS.forEach(([a, b], i) => {
-        arcProgress[i] = Math.min(1, arcProgress[i] + 0.003);
-        const p1 = cityPos[a];
-        const p2 = cityPos[b];
-        const steps = 60;
-        const drawTo = Math.floor(arcProgress[i] * steps);
+      // --- Arcs ---
+      CONNECTIONS.forEach(([a,b], i) => {
+        arcState[i].progress = Math.min(1, arcState[i].progress + 0.004);
+        const p1 = cityPos[a], p2 = cityPos[b];
+        const cp = bezierCtrl(p1, p2);
+        const steps = 80;
+        const drawTo = Math.floor(arcState[i].progress * steps);
 
-        // Glow pass
+        // Glow
         ctx.beginPath();
-        for (let s = 0; s <= drawTo; s++) {
-          const pt = bezierPt(p1, p2, s / steps);
-          if (s === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
+        for (let s=0; s<=drawTo; s++) {
+          const pt = bezierPt(p1, cp, p2, s/steps);
+          s===0 ? ctx.moveTo(pt.x,pt.y) : ctx.lineTo(pt.x,pt.y);
         }
-        ctx.strokeStyle = 'rgba(113,50,245,0.15)';
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(113,50,245,0.2)';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
         ctx.stroke();
 
-        // Main arc
+        // Main line
         ctx.beginPath();
-        for (let s = 0; s <= drawTo; s++) {
-          const pt = bezierPt(p1, p2, s / steps);
-          if (s === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
+        for (let s=0; s<=drawTo; s++) {
+          const pt = bezierPt(p1, cp, p2, s/steps);
+          s===0 ? ctx.moveTo(pt.x,pt.y) : ctx.lineTo(pt.x,pt.y);
         }
-        ctx.strokeStyle = 'rgba(167,139,250,0.4)';
+        ctx.strokeStyle = 'rgba(167,139,250,0.5)';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      });
+
+      // --- City nodes (square markers like doublezero) ---
+      cityPos.forEach((p, i) => {
+        // Outer glow ring
+        const gr = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,14);
+        gr.addColorStop(0, 'rgba(167,139,250,0.35)');
+        gr.addColorStop(1, 'rgba(113,50,245,0)');
+        ctx.fillStyle = gr;
+        ctx.fillRect(p.x-14, p.y-14, 28, 28);
+
+        // Square node
+        const sz = 6;
+        ctx.fillStyle = '#7132F5';
+        ctx.fillRect(p.x-sz/2, p.y-sz/2, sz, sz);
+        ctx.strokeStyle = 'rgba(196,181,253,0.8)';
         ctx.lineWidth = 1;
-        ctx.stroke();
+        ctx.strokeRect(p.x-sz/2, p.y-sz/2, sz, sz);
+
+        // Inner bright dot
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.5, 0, Math.PI*2);
+        ctx.fillStyle = '#C4B5FD';
+        ctx.fill();
       });
 
-      // City squares with glow
-      cityPos.forEach(p => {
-        // glow
-        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 10);
-        grad.addColorStop(0, 'rgba(167,139,250,0.4)');
-        grad.addColorStop(1, 'rgba(167,139,250,0)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(p.x - 10, p.y - 10, 20, 20);
-        // square
-        const size = 5;
-        ctx.fillStyle = '#A78BFA';
-        ctx.fillRect(p.x - size/2, p.y - size/2, size, size);
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-        ctx.lineWidth = 0.8;
-        ctx.strokeRect(p.x - size/2, p.y - size/2, size, size);
-      });
-
-      // Travelling dots
+      // --- Travelling dots ---
       travellers.forEach(tv => {
         tv.progress += tv.speed;
         if (tv.progress > 1) tv.progress = 0;
-        const pt = bezierPt(cityPos[tv.from], cityPos[tv.to], tv.progress);
+        const [a,b] = CONNECTIONS[tv.conn];
+        const p1 = cityPos[a], p2 = cityPos[b];
+        const cp = bezierCtrl(p1,p2);
+        const pt = bezierPt(p1, cp, p2, tv.progress);
+
+        // Glow
+        const dg = ctx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,6);
+        dg.addColorStop(0,'rgba(196,181,253,0.6)');
+        dg.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle = dg;
+        ctx.fillRect(pt.x-6,pt.y-6,12,12);
+
+        // White dot with purple ring
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI*2);
+        ctx.fillStyle = '#fff';
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
-        ctx.strokeStyle = '#A78BFA';
+        ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI*2);
+        ctx.strokeStyle = '#8B5CF6';
         ctx.lineWidth = 1;
         ctx.stroke();
       });
@@ -160,9 +198,9 @@ export const GlobalMapSection = () => {
 
   const stats = [
     { label: 'Settlement', value: '< 2s' },
-    { label: 'Gas cost', value: '< $0.001' },
-    { label: 'Uptime', value: '99.9%' },
-    { label: 'Chain ID', value: '57073' },
+    { label: 'Gas cost',   value: '< $0.001' },
+    { label: 'Uptime',     value: '99.9%' },
+    { label: 'Chain ID',   value: '57073' },
   ];
 
   return (
@@ -182,20 +220,24 @@ export const GlobalMapSection = () => {
           </p>
         </div>
 
-        <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] mb-10"
-          style={{ height: 300, background: '#020408' }}>
+        <div className="relative rounded-2xl overflow-hidden border border-white/[0.08]"
+          style={{ height: 320, background: 'linear-gradient(180deg, #060412 0%, #020408 100%)' }}>
           <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }} />
-          <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
+          <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
             style={{ background: 'linear-gradient(to top, #04060f, transparent)' }} />
           <div className="absolute top-0 left-0 right-0 h-10 pointer-events-none"
             style={{ background: 'linear-gradient(to bottom, #04060f, transparent)' }} />
+          <div className="absolute left-0 top-0 bottom-0 w-16 pointer-events-none"
+            style={{ background: 'linear-gradient(to right, #04060f, transparent)' }} />
+          <div className="absolute right-0 top-0 bottom-0 w-16 pointer-events-none"
+            style={{ background: 'linear-gradient(to left, #04060f, transparent)' }} />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {stats.map((s, i) => (
-            <div key={i} className="p-6 rounded-2xl border border-white/[0.08] bg-white/[0.02] text-center">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+          {stats.map((s,i) => (
+            <div key={i} className="p-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] text-center">
               <div className="text-2xl sm:text-3xl font-extrabold text-white mb-1">{s.value}</div>
-              <div className="font-mono text-[11px] uppercase tracking-widest text-[#9CA3AF]">{s.label}</div>
+              <div className="font-mono text-[11px] uppercase tracking-widest text-[#6B7280]">{s.label}</div>
             </div>
           ))}
         </div>

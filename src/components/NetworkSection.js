@@ -14,15 +14,15 @@ const cards = [
     tag: 'GLOBAL SELLERS',
     title: 'No borders, no fees',
     desc: 'Accept payments from anywhere on earth. No currency conversion, no international transfer delays.',
-    accent: '#3B82F6',
-    glow: 'rgba(59,130,246,0.10)',
+    accent: '#6366F1',
+    glow: 'rgba(99,102,241,0.10)',
   },
   {
     tag: 'BUSINESSES',
     title: 'Checkout without friction',
     desc: 'Create payment links in one click. Customers pay directly from their wallet — no signup required.',
-    accent: '#10B981',
-    glow: 'rgba(16,185,129,0.10)',
+    accent: '#A78BFA',
+    glow: 'rgba(167,139,250,0.10)',
   },
 ];
 
@@ -35,58 +35,59 @@ export const NetworkSection = () => {
     const ctx = canvas.getContext('2d');
     let animFrame;
 
-    const resize = () => {
-      const W = canvas.offsetWidth;
-      const H = canvas.offsetHeight;
-      canvas.width = W * window.devicePixelRatio;
-      canvas.height = H * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      return { W, H };
-    };
+    const W = canvas.offsetWidth;
+    const H = canvas.offsetHeight;
+    canvas.width = W * window.devicePixelRatio;
+    canvas.height = H * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-    let { W, H } = resize();
     const cx = W / 2, cy = H / 2;
-    const R = Math.min(W, H) * 0.38;
+    const R = Math.min(W, H) * 0.42;
 
-    // Build geodesic grid
+    // Build geodesic grid points
     const gridLines = [];
     for (let lat = -75; lat <= 75; lat += 15) {
       const pts = [];
-      for (let lon = 0; lon <= 360; lon += 3) {
+      for (let lon = 0; lon <= 361; lon += 2) {
         const phi = (lat * Math.PI) / 180;
         const theta = (lon * Math.PI) / 180;
         const x3 = R * Math.cos(phi) * Math.cos(theta);
         const y3 = R * Math.sin(phi);
         const z3 = R * Math.cos(phi) * Math.sin(theta);
-        const sc = (R * 2) / (R * 2 + z3);
+        const sc = (R * 2.2) / (R * 2.2 + z3);
         pts.push({ x: cx + x3 * sc, y: cy - y3 * sc, z: z3 });
       }
       gridLines.push(pts);
     }
     for (let lon = 0; lon < 360; lon += 15) {
       const pts = [];
-      for (let lat = -90; lat <= 90; lat += 3) {
+      for (let lat = -90; lat <= 90; lat += 2) {
         const phi = (lat * Math.PI) / 180;
         const theta = (lon * Math.PI) / 180;
         const x3 = R * Math.cos(phi) * Math.cos(theta);
         const y3 = R * Math.sin(phi);
         const z3 = R * Math.cos(phi) * Math.sin(theta);
-        const sc = (R * 2) / (R * 2 + z3);
+        const sc = (R * 2.2) / (R * 2.2 + z3);
         pts.push({ x: cx + x3 * sc, y: cy - y3 * sc, z: z3 });
       }
       gridLines.push(pts);
     }
 
-    const arcColors = ['#A78BFA', '#8B5CF6', '#7132F5', '#3B82F6', '#10B981', '#C4B5FD', '#6366F1', '#F59E0B'];
+    // Purple/violet palette matching InkDrop
+    const arcColors = [
+      '#7132F5','#8B5CF6','#A78BFA','#C4B5FD',
+      '#6366F1','#4F46E5','#9333EA','#7C3AED',
+    ];
 
-    const arcs = Array.from({ length: 10 }, (_, i) => ({
-      lat1: (Math.random() - 0.5) * 150,
+    const arcs = Array.from({ length: 14 }, (_, i) => ({
+      lat1: (Math.random() - 0.5) * 160,
       lon1: Math.random() * 360,
-      lat2: (Math.random() - 0.5) * 150,
+      lat2: (Math.random() - 0.5) * 160,
       lon2: Math.random() * 360,
       color: arcColors[i % arcColors.length],
       progress: Math.random(),
-      speed: 0.003 + Math.random() * 0.003,
+      speed: 0.0025 + Math.random() * 0.003,
+      trailLen: 0.12 + Math.random() * 0.1,
     }));
 
     function latLonTo3D(lat, lon) {
@@ -100,86 +101,104 @@ export const NetworkSection = () => {
     }
 
     function project(p) {
-      const sc = (R * 2) / (R * 2 + p.z);
+      const sc = (R * 2.2) / (R * 2.2 + p.z);
       return { x: cx + p.x * sc, y: cy - p.y * sc, z: p.z };
     }
 
     function slerp(a, b, t) {
-      const dot = Math.max(-1, Math.min(1, (a.x * b.x + a.y * b.y + a.z * b.z) / (R * R)));
+      const dot = Math.max(-1, Math.min(1, (a.x*b.x + a.y*b.y + a.z*b.z) / (R*R)));
       const omega = Math.acos(dot);
-      if (Math.abs(omega) < 0.001) return a;
+      if (Math.abs(omega) < 0.001) return { x: a.x*(1-t)+b.x*t, y: a.y*(1-t)+b.y*t, z: a.z*(1-t)+b.z*t };
       const s = Math.sin(omega);
       return {
-        x: (Math.sin((1 - t) * omega) / s) * a.x + (Math.sin(t * omega) / s) * b.x,
-        y: (Math.sin((1 - t) * omega) / s) * a.y + (Math.sin(t * omega) / s) * b.y,
-        z: (Math.sin((1 - t) * omega) / s) * a.z + (Math.sin(t * omega) / s) * b.z,
+        x: (Math.sin((1-t)*omega)/s)*a.x + (Math.sin(t*omega)/s)*b.x,
+        y: (Math.sin((1-t)*omega)/s)*a.y + (Math.sin(t*omega)/s)*b.y,
+        z: (Math.sin((1-t)*omega)/s)*a.z + (Math.sin(t*omega)/s)*b.z,
       };
     }
 
     function draw() {
       ctx.clearRect(0, 0, W, H);
 
-      // Grid lines
+      // Subtle radial glow at center
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.1);
+      glow.addColorStop(0, 'rgba(113,50,245,0.06)');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+
+      // Grid lines — front hemisphere brighter
       gridLines.forEach(pts => {
-        ctx.beginPath();
-        let started = false;
-        pts.forEach(p => {
-          if (p.z > -R * 0.2) {
-            if (!started) { ctx.moveTo(p.x, p.y); started = true; }
-            else ctx.lineTo(p.x, p.y);
-          } else { started = false; }
-        });
-        ctx.strokeStyle = 'rgba(167,139,250,0.12)';
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
+        for (let i = 1; i < pts.length; i++) {
+          const p = pts[i], pp = pts[i-1];
+          if (p.z < -R * 0.05 || pp.z < -R * 0.05) continue;
+          const brightness = Math.max(0, (p.z + R) / (R * 2));
+          ctx.beginPath();
+          ctx.moveTo(pp.x, pp.y);
+          ctx.lineTo(p.x, p.y);
+          ctx.strokeStyle = `rgba(167,139,250,${0.08 + brightness * 0.1})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
       });
 
-      // Animated arcs
+      // Animated arcs with glow
       arcs.forEach(arc => {
         arc.progress += arc.speed;
-        if (arc.progress > 1.3) {
-          arc.progress = -0.1;
-          arc.lat1 = (Math.random() - 0.5) * 150;
+        if (arc.progress > 1 + arc.trailLen) {
+          arc.progress = -arc.trailLen;
+          arc.lat1 = (Math.random() - 0.5) * 160;
           arc.lon1 = Math.random() * 360;
-          arc.lat2 = (Math.random() - 0.5) * 150;
+          arc.lat2 = (Math.random() - 0.5) * 160;
           arc.lon2 = Math.random() * 360;
+          arc.color = arcColors[Math.floor(Math.random() * arcColors.length)];
         }
 
         const p1 = latLonTo3D(arc.lat1, arc.lon1);
         const p2 = latLonTo3D(arc.lat2, arc.lon2);
-        const trailLen = 0.18;
-        const start = Math.max(0, arc.progress - trailLen);
+        const start = Math.max(0, arc.progress - arc.trailLen);
         const end = Math.min(1, arc.progress);
         if (start >= end) return;
 
-        ctx.beginPath();
-        const steps = 40;
-        let first = true;
+        const steps = 50;
+        const visiblePts = [];
         for (let s = 0; s <= steps; s++) {
           const frac = start + (end - start) * (s / steps);
           const p = slerp(p1, p2, frac);
           const proj = project(p);
-          if (proj.z < -R * 0.1) continue;
-          if (first) { ctx.moveTo(proj.x, proj.y); first = false; }
-          else ctx.lineTo(proj.x, proj.y);
+          if (proj.z > -R * 0.05) visiblePts.push({ ...proj, frac: s / steps });
         }
+        if (visiblePts.length < 2) return;
 
-        const alpha = Math.min(1, Math.min(arc.progress / 0.1, (1.3 - arc.progress) / 0.3));
-        const hex = Math.round(alpha * 220).toString(16).padStart(2, '0');
-        ctx.strokeStyle = arc.color + hex;
+        // Glow pass
+        ctx.beginPath();
+        visiblePts.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y));
+        ctx.strokeStyle = arc.color + '30';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Sharp arc
+        const alpha = Math.min(1, Math.min((arc.progress + arc.trailLen) / 0.15, (1 + arc.trailLen - arc.progress) / 0.2));
+        ctx.beginPath();
+        visiblePts.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y));
+        ctx.strokeStyle = arc.color + Math.round(alpha * 200).toString(16).padStart(2,'0');
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // Head dot
-        if (arc.progress < 1) {
-          const headPt = slerp(p1, p2, Math.min(1, arc.progress));
-          const headProj = project(headPt);
-          if (headProj.z > -R * 0.1) {
-            ctx.beginPath();
-            ctx.arc(headProj.x, headProj.y, 2, 0, Math.PI * 2);
-            ctx.fillStyle = arc.color;
-            ctx.fill();
-          }
+        // Bright head dot
+        const last = visiblePts[visiblePts.length - 1];
+        if (last && arc.progress < 1) {
+          ctx.beginPath();
+          ctx.arc(last.x, last.y, 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = arc.color;
+          ctx.fill();
+          // Dot glow
+          const dg = ctx.createRadialGradient(last.x, last.y, 0, last.x, last.y, 8);
+          dg.addColorStop(0, arc.color + '60');
+          dg.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = dg;
+          ctx.fillRect(last.x - 8, last.y - 8, 16, 16);
         }
       });
 
@@ -193,7 +212,7 @@ export const NetworkSection = () => {
   return (
     <section className="relative py-28 px-4 sm:px-6 lg:px-8 border-t border-white/[0.06] bg-[#020408] overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(113,50,245,0.08) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(113,50,245,0.09) 0%, transparent 70%)' }} />
       <div className="max-w-7xl mx-auto relative">
         <div className="mb-4">
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#A78BFA] font-semibold">[ 00 / NETWORK ]</span>
@@ -207,19 +226,17 @@ export const NetworkSection = () => {
           </p>
         </div>
 
-        {/* Globe canvas */}
-        <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] mb-10"
-          style={{ height: 380, background: 'radial-gradient(ellipse at 50% 50%, #0d0520 0%, #020408 70%)' }}>
+        <div className="relative rounded-2xl overflow-hidden border border-white/[0.08]"
+          style={{ height: 420, background: 'radial-gradient(ellipse at 50% 50%, #0d0520 0%, #020408 75%)' }}>
           <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }} />
-          {/* Fade bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+          <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
             style={{ background: 'linear-gradient(to top, #020408, transparent)' }} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mt-8">
           {cards.map(c => (
             <SpotlightCard key={c.tag} className="flex flex-col" spotlightColor={c.glow}>
-              <div className="absolute top-0 left-0 right-0 h-[2px] opacity-60"
+              <div className="absolute top-0 left-0 right-0 h-[2px] opacity-70"
                 style={{ background: `linear-gradient(90deg, transparent, ${c.accent}, transparent)` }} />
               <div className="flex items-center gap-2 mb-4">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.accent }} />
