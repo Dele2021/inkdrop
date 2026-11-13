@@ -79,16 +79,20 @@ export const NetworkSection = () => {
       '#6366F1','#4F46E5','#9333EA','#7C3AED',
     ];
 
-    const arcs = Array.from({ length: 14 }, (_, i) => ({
-      lat1: (Math.random() - 0.5) * 160,
-      lon1: Math.random() * 360,
-      lat2: (Math.random() - 0.5) * 160,
-      lon2: Math.random() * 360,
-      color: arcColors[i % arcColors.length],
-      progress: Math.random(),
-      speed: 0.0025 + Math.random() * 0.003,
-      trailLen: 0.12 + Math.random() * 0.1,
-    }));
+    // Only spawn arcs between points on the FRONT hemisphere (lon -90..90)
+    function frontArc(i) {
+      return {
+        lat1: (Math.random() - 0.5) * 140,
+        lon1: (Math.random() - 0.5) * 160,  // -80..80 front face
+        lat2: (Math.random() - 0.5) * 140,
+        lon2: (Math.random() - 0.5) * 160,
+        color: arcColors[i % arcColors.length],
+        progress: Math.random(),
+        speed: 0.0025 + Math.random() * 0.003,
+        trailLen: 0.1 + Math.random() * 0.08,
+      };
+    }
+    const arcs = Array.from({ length: 14 }, (_, i) => frontArc(i));
 
     function latLonTo3D(lat, lon) {
       const phi = (lat * Math.PI) / 180;
@@ -146,12 +150,8 @@ export const NetworkSection = () => {
       arcs.forEach(arc => {
         arc.progress += arc.speed;
         if (arc.progress > 1 + arc.trailLen) {
-          arc.progress = -arc.trailLen;
-          arc.lat1 = (Math.random() - 0.5) * 160;
-          arc.lon1 = Math.random() * 360;
-          arc.lat2 = (Math.random() - 0.5) * 160;
-          arc.lon2 = Math.random() * 360;
-          arc.color = arcColors[Math.floor(Math.random() * arcColors.length)];
+          const fresh = frontArc(Math.floor(Math.random() * arcColors.length));
+          Object.assign(arc, fresh, { progress: -arc.trailLen });
         }
 
         const p1 = latLonTo3D(arc.lat1, arc.lon1);
@@ -166,7 +166,7 @@ export const NetworkSection = () => {
           const frac = start + (end - start) * (s / steps);
           const p = slerp(p1, p2, frac);
           const proj = project(p);
-          if (proj.z > -R * 0.05) visiblePts.push({ ...proj, frac: s / steps });
+          if (proj.z > 0) visiblePts.push({ ...proj, frac: s / steps });
         }
         if (visiblePts.length < 2) return;
 
